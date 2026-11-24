@@ -1,0 +1,27 @@
+# En-têtes HTTP appliqués par Netlify (sécurité + performance)
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+
+# L'espace d'administration et l'espace client ne doivent jamais apparaître dans Google
+/admin/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+/client.html
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+# Le service worker doit toujours être à jour
+/sw.js
+  Cache-Control: no-cache
+
+# Images mises en cache 1 jour
+/*.svg
+  Cache-Control: public, max-age=86400
+/*.png
+  Cache-Control: public, max-age=86400

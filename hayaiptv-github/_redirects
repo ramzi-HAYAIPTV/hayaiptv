@@ -1,0 +1,7 @@
+# Anciens liens connus par Google → nouvelles pages (redirection permanente 301)
+/chaines        /channels   301
+/channel        /channels   301
+/contact-us     /contact    301
+/contactez-nous /contact    301
+/feed           /           301
+/feed/*         /           301

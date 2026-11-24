@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="fr" class=""><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HayaIPTV — Haya IPTV, la télévision par Internet en direct et en 4K</title>
+  <meta name="description" content="HayaIPTV (hayaiptv.com) : la plateforme IPTV — chaînes en direct par Internet, replay, 4K HDR et guide TV sur Smart TV, mobile et PC.">
+  <meta name="application-name" content="HayaIPTV">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#05070f">
+  <script>try { const t = localStorage.getItem("haya-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+  <link rel="canonical" href="https://hayaiptv.com/">
+
+  <!-- Performance : connexion anticipée aux polices -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap">
+  <link rel="stylesheet" href="style.css?v=9">
+
+  <!-- Icônes -->
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <!-- Partage réseaux sociaux (Open Graph / Twitter) -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:site_name" content="Haya IPTV">
+  <meta property="og:title" content="HayaIPTV — la télévision par Internet en direct et en 4K">
+  <meta property="og:description" content="Chaînes en direct, replay, qualité 4K HDR et guide TV intelligent, sur tous vos écrans.">
+  <meta property="og:url" content="https://hayaiptv.com/">
+  <meta property="og:image" content="https://hayaiptv.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- Données structurées pour Google (schema.org) -->
+  <script type="application/ld+json" id="ld-site">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "Organization", "@id": "https://hayaiptv.com/#org", "name": "HayaIPTV", "alternateName": ["Haya IPTV", "hayaiptv", "hayaiptv.com"], "url": "https://hayaiptv.com/", "logo": "https://hayaiptv.com/apple-touch-icon.png" },
+      { "@type": "WebSite", "@id": "https://hayaiptv.com/#site", "name": "HayaIPTV", "alternateName": ["Haya IPTV", "hayaiptv"], "url": "https://hayaiptv.com/", "inLanguage": "fr-FR", "publisher": { "@id": "https://hayaiptv.com/#org" } }
+    ]
+  }
+  </script>
+  <script type="application/ld+json" id="ld-faq">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Quel débit internet faut-il ?","acceptedAnswer":{"@type":"Answer","text":"10 Mbit/s suffisent pour la HD et 25 Mbit/s pour la 4K. Le streaming adaptatif ajuste automatiquement la qualité."}},{"@type":"Question","name":"Puis-je regarder sur plusieurs écrans en même temps ?","acceptedAnswer":{"@type":"Answer","text":"Chaque abonnement inclut 1 écran à la fois. Vous pouvez installer l'application sur tous vos appareils, mais regarder sur un seul écran simultanément. Pour 2 écrans en même temps, il faut 2 abonnements."}},{"@type":"Question","name":"Y a-t-il un engagement ?","acceptedAnswer":{"@type":"Answer","text":"Non. Toutes les formules sont sans engagement et résiliables à tout moment."}},{"@type":"Question","name":"Le contrôle parental est-il inclus ?","acceptedAnswer":{"@type":"Answer","text":"Oui, le contrôle parental par code est inclus dans toutes les formules."}},{"@type":"Question","name":"Comment contacter le support ?","acceptedAnswer":{"@type":"Answer","text":"Via le formulaire de contact : chaque message est traité depuis l'espace d'administration."}}]}</script>
+</head>
+<body>
+<!--
+  Structure de la page :
+  - Les textes ont un attribut data-k="cle" : ils sont remplis depuis data.content (modifiable dans /admin > Contenu).
+  - Les listes (fonctionnalités, chaînes, tarifs, étapes, appareils, FAQ) sont générées en JavaScript plus bas.
+  - SEO : le contenu par défaut est déjà écrit dans ce HTML (pré-génération), Google le lit sans exécuter le JavaScript.
+-->
+
+<header class="top" id="top">
+  <nav class="wrap nav" aria-label="Navigation principale">
+    <a href="/" class="brand" aria-label="Haya IPTV — accueil">
+      <img class="mark" src="logo.svg" alt="" width="38" height="38">
+      <span class="word" data-brand="">haya<b>iptv</b></span>
+    </a>
+    <ul class="links" id="links">
+      <li data-section="iptv"><a href="#iptv">L'IPTV</a></li>
+      <li data-section="features" hidden=""><a href="#fonctionnalites">Fonctionnalités</a></li>
+      <li><a href="#chaines">Chaînes</a></li>
+      <li><a href="#guide-tv">Guide TV</a></li>
+      <li><a href="#tarifs">Tarifs</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="/blog/">Blog</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <div class="nav-cta">
+      <button type="button" class="theme-btn" id="theme-btn" aria-label="Passer en mode clair">☀️</button>
+      <a class="btn small" href="#tarifs">Commencer</a>
+      <button class="burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false">☰</button>
+    </div>
+  </nav>
+</header>
+
+<main id="contenu">
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="reveal">
+      <span class="pill"><b data-k="heroBadge">IPTV</b> <span data-k="heroBadgeText">Télévision par Internet · Direct · Replay · 4K</span></span>
+      <h1><span data-k="heroTitle">HayaIPTV :</span><br><span class="grad" data-k="heroHighlight">la télé par Internet.</span></h1>
+      <p class="lead" data-k="heroLead">HayaIPTV est une plateforme IPTV (télévision par protocole Internet) : chaînes en direct, replay et guide TV diffusés par Internet sur Smart TV, box, mobile et ordinateur.</p>
+      <div class="hero-cta">
+        <a class="btn" href="#tarifs" data-k="heroCta1">Voir les offres →</a>
+        <a class="btn ghost" href="#chaines" data-k="heroCta2">Explorer les chaînes</a>
+      </div>
+      <div class="trust">
+        <div><b id="stat-cat">9</b><span data-k="stat1Label">thèmes : sport, ciné, séries, info…</span></div>
+        <div><b data-k="stat2Value">4K HDR</b><span data-k="stat2Label">qualité maximale</span></div>
+        <div><b data-k="stat3Value">dès 45 €</b><span data-k="stat3Label">par an, sans engagement</span></div>
+      </div>
+    </div>
+
+    <div class="tv reveal" aria-hidden="true">
+      <div class="tv-screen">
+        <div class="tv-scene"></div>
+        <div class="tv-ui">
+          <div class="tv-top"><span class="live">EN DIRECT</span><span id="tv-clock">20:45</span></div>
+          <div>
+            <div class="tv-sub" id="tv-ch">Velocity · Sport</div>
+            <div class="tv-title" id="tv-prog">Magazine auto-moto</div>
+            <div class="tv-bar"><i></i></div>
+            <div class="tv-rail" id="tv-rail"><span class="">⚽</span><span class="on">🏀</span><span class="">🏎️</span><span class="">🎬</span><span class="">🎞️</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="float f1"><i aria-hidden="true">📺</i><div>Qualité 4K HDR<small>Image adaptative</small></div></div>
+      <div class="float f2"><i aria-hidden="true">⚡</i><div>Zapping éclair<small>Démarrage instantané</small></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ C'EST QUOI L'IPTV ? ============ -->
+<section id="iptv" data-section="iptv">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Comprendre</span>
+      <h2><span data-k="iptvTitle">C'est quoi</span> <span class="grad" data-k="iptvHighlight">l'IPTV ?</span></h2>
+      <p data-k="iptvLead">IPTV veut dire « télévision par protocole Internet » : les chaînes arrivent par votre connexion Internet, pas par une antenne ni une parabole.</p>
+    </div>
+    <ol class="iptv-flow reveal" aria-label="Fonctionnement de l'IPTV en 3 étapes">
+      <li><div class="iptv-ico" aria-hidden="true">🛰️</div><b>1. Les chaînes</b><span>Les serveurs HayaIPTV reçoivent les chaînes et les convertissent en flux vidéo.</span></li>
+      <li class="iptv-arrow" aria-hidden="true">→</li>
+      <li><div class="iptv-ico" aria-hidden="true">🌐</div><b>2. Internet</b><span>Le flux voyage par votre box Internet (fibre, ADSL, 4G/5G).</span></li>
+      <li class="iptv-arrow" aria-hidden="true">→</li>
+      <li><div class="iptv-ico" aria-hidden="true">📺</div><b>3. Votre écran</b><span>L'application HayaIPTV affiche le direct, le replay et le guide TV.</span></li>
+    </ol>
+    <div class="iptv-vs reveal">
+      <div class="panel"><h3>📡 Télé classique</h3><ul><li>Antenne ou parabole à installer</li><li>Seulement sur le téléviseur</li><li>Pas de replay ni de pause</li></ul></div>
+      <div class="panel on"><h3>⚡ IPTV avec HayaIPTV</h3><ul><li>Juste une connexion Internet</li><li>Smart TV, mobile, tablette, PC</li><li>Replay, pause du direct, guide TV</li></ul></div>
+    </div>
+    <p style="text-align:center;margin:22px 0 0"><a class="btn ghost" href="/blog/c-est-quoi-iptv">Lire le guide complet de l'IPTV →</a></p>
+  </div>
+</section>
+
+<div class="devices" data-section="devices" aria-label="Appareils compatibles" hidden=""><div class="marquee" id="marquee"><span>📺 Smart TV</span><span>🔥 Fire TV</span><span>🍏 Apple TV</span><span>📱 Mobile</span><span>💻 Ordinateur</span><span>🌐 Web</span><span>📺 Smart TV</span><span>🔥 Fire TV</span><span>🍏 Apple TV</span><span>📱 Mobile</span><span>💻 Ordinateur</span><span>🌐 Web</span></div></div>
+
+<!-- ============ FONCTIONNALITÉS ============ -->
+<section id="fonctionnalites" data-section="features" hidden="">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Fonctionnalités</span>
+      <h2><span data-k="featuresTitle">Tout ce qu'on attend d'une</span> <span class="grad" data-k="featuresHighlight">plateforme moderne</span></h2>
+      <p data-k="featuresLead">Une expérience pensée dans les moindres détails, du premier clic au dernier épisode.</p>
+    </div>
+    <div class="bento" id="features">
+    <div class="tile t-a reveal">
+      <div class="ico" aria-hidden="true">📈</div><h3>Streaming adaptatif</h3><p>La qualité s'ajuste en temps réel à votre connexion : pas de coupure, même quand le réseau faiblit.</p>
+      <div class="mini-chart"><i style="height:35%"></i><i style="height:55%"></i><i style="height:45%"></i><i style="height:70%"></i><i style="height:62%"></i><i style="height:85%"></i><i style="height:78%"></i><i style="height:95%"></i><i style="height:88%"></i><i style="height:100%"></i></div>
+      
+    </div>
+    <div class="tile t-b reveal">
+      <div class="ico" aria-hidden="true">⏱️</div><h3>Zapping éclair</h3><p>Changement de chaîne en moins d'une seconde.</p>
+      
+      <div class="big-num grad">0,8 s</div>
+    </div>
+    <div class="tile t-c reveal">
+      <div class="ico" aria-hidden="true">🗓️</div><h3>Guide TV intelligent</h3><p>Programme sur 7 jours, rappels et recommandations.</p>
+      
+      
+    </div>
+    <div class="tile t-d reveal">
+      <div class="ico" aria-hidden="true">⏪</div><h3>Replay &amp; pause du direct</h3><p>Reprenez là où vous en étiez, sur n'importe quel écran.</p>
+      
+      
+    </div>
+    <div class="tile t-e reveal">
+      <div class="ico" aria-hidden="true">👨‍👩‍👧</div><h3>Profils &amp; contrôle parental</h3><p>Un espace par membre de la famille, sécurisé par code.</p>
+      
+      
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ CHAÎNES ============ -->
+<section id="chaines" data-section="channels" style="background:var(--bg2)">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Catalogue</span>
+      <h2><span data-k="channelsTitle">Des chaînes pour</span> <span class="grad" data-k="channelsHighlight">toute la famille</span></h2>
+      <p data-k="channelsLead">Sport, cinéma, séries, info, jeunesse… Le catalogue est géré en temps réel depuis l'espace d'administration.</p>
+    </div>
+    <div class="toolbar reveal">
+      <div class="tabs" id="tabs"><button class="tab active" data-cat="Toutes">Toutes</button><button class="tab " data-cat="Sport">Sport</button><button class="tab " data-cat="Cinéma">Cinéma</button><button class="tab " data-cat="Séries">Séries</button><button class="tab " data-cat="Enfants">Enfants</button><button class="tab " data-cat="Actualités">Actualités</button><button class="tab " data-cat="Documentaire">Documentaire</button><button class="tab " data-cat="Musique">Musique</button><button class="tab " data-cat="Lifestyle">Lifestyle</button><button class="tab " data-cat="Gaming">Gaming</button></div>
+      <label class="search"><input id="q" type="search" placeholder="Rechercher une chaîne…" aria-label="Rechercher une chaîne"></label>
+    </div>
+    <div class="channels" id="channels"><article class="ch" data-play="1" tabindex="0" role="button" aria-label="Aperçu de Sport One">
+        <div class="ch-top"><div class="ch-logo" aria-hidden="true">⚽</div><div><h3 class="ch-name">Sport One</h3><small>Sport</small></div></div>
+        <div class="ch-now"><em>● LIVE</em>Grand Derby — direct</div>
+        <div class="ch-bar"><i style="width:57%"></i></div>
+      </article><article class="ch" data-play="2" tabindex="0" role="button" aria-label="Aperçu de Arena Plus">
+        <div class="ch-top"><div class="ch-logo" aria-hidden="true">🏀</div><div><h3 class="ch-name">Arena Plus</h3><small>Sport</small></div></div>
+        <div class="ch-now"><em>● LIVE</em>Basket : finale régionale</div>
+        <div class="ch-bar"><i style="width:24%"></i></div>
+      </article><article class="ch" data-play="3" tabindex="0" role="button" aria-label="Aperçu de Velocity">
+        <div class="ch-top"><div class="ch-logo" aria-hidden="true">🏎️</div><div><h3 class="ch-name">Velocity</h3><small>Sport</small></div></div>
+        <div class="ch-now"><em>● LIVE</em>Magazine auto-moto</div>
+        <div class="ch-bar"><i style="width:61%"></i></div>
+      </article><article class="ch" data-play="4" tabindex="0" role="button" aria-label="Aperçu de Ciné Max">
+        <div class="ch-top"><div class="ch-logo" aria-hidden="true">🎬</div><div><h3 class="ch-name">Ciné Max</h3><small>Cinéma</small></div></div>
+        <div class="ch-now"><em>● LIVE</em>Le Dernier Horizon</div>
+        <div class="ch-bar"><i style="width:28%"></i></div>
+      </article><article class="ch" data-play="5" tabindex="0" role="button" aria-label="Aperçu de Ciné Classics">
+        <div class="ch-top"><div class="ch-logo" aria-hidden="true">🎞️</div><div><h3 class="ch-name">Ciné Classics</h3><small>Cinéma</small></div></div>
+        <div class="ch-now"><em>● LIVE</em>Cycle noir &amp; blanc</div>
+        <div class="ch-bar"><i style="width:65%"></i></div>
+      </article><article class="ch" data-play="6" tabindex="0" role="button" aria-label="Aperçu de Séries Club">
+        <div class="ch-top"><div class="ch-logo" aria-hidden="true">🍿</div><div><h3 class="ch-name">Séries Club</h3><small>Séries</small></div></div>
+        <div class="ch-now"><em>● LIVE</em>Les Voisins — S2E4</div>
+        <div class="ch-bar"><i style="width:32%"></i></div>
+      </article><article class="ch" data-play="7" tabindex="0" role="button" aria-label="Aperçu de Kids World">
+        <div class="ch-top"><div class="ch-logo" aria-hidden="true">🧸</div><div><h3 class="ch-name">Kids World</h3><small>Enfants</small></div></div>
+        <div class="ch-now"><em>● LIVE</em>Les Aventures de Pixel</div>
+        <div class="ch-bar"><i style="width:69%"></i></div>
+      </article><article class="ch" data-play="8" tabindex="0" role="button" aria-label="Aperçu de Info 24">
+        <div class="ch-top"><div class="ch-logo" aria-hidden="true">📰</div><div><h3 class="ch-name">Info 24</h3><small>Actualités</small></div></div>
+        <div class="ch-now"><em>● LIVE</em>Le journal de 20 h</div>
+        <div class="ch-bar"><i style="width:36%"></i></div>
+      </article><article class="ch" data-play="9" tabindex="0" role="button" aria-label="Aperçu de Planète Docs">
+        <div class="ch-top"><div class="ch-logo" aria-hidden="true">🌍</div><div><h3 class="ch-name">Planète Docs</h3><small>Documentaire</small></div></div>
+        <div class="ch-now"><em>● LIVE</em>Océans inconnus</div>
+        <div class="ch-bar"><i style="width:73%"></i></div>
+      </article><article class="ch" data-play="10" tabindex="0" role="button" aria-label="Aperçu de Music Live">
+        <div class="ch-top"><div class="ch-logo" aria-hidden="true">🎵</div><div><h3 class="ch-name">Music Live</h3><small>Musique</small></div></div>
+        <div class="ch-now"><em>● LIVE</em>Live session acoustique</div>
+        <div class="ch-bar"><i style="width:40%"></i></div>
+      </article><article class="ch" data-play="11" tabindex="0" role="button" aria-label="Aperçu de Chef TV">
+        <div class="ch-top"><div class="ch-logo" aria-hidden="true">🍳</div><div><h3 class="ch-name">Chef TV</h3><small>Lifestyle</small></div></div>
+        <div class="ch-now"><em>● LIVE</em>Desserts en 15 minutes</div>
+        <div class="ch-bar"><i style="width:77%"></i></div>
+      </article><article class="ch" data-play="12" tabindex="0" role="button" aria-label="Aperçu de Game Zone">
+        <div class="ch-top"><div class="ch-logo" aria-hidden="true">🎮</div><div><h3 class="ch-name">Game Zone</h3><small>Gaming</small></div></div>
+        <div class="ch-now"><em>● LIVE</em>Tournoi e-sport</div>
+        <div class="ch-bar"><i style="width:44%"></i></div>
+      </article></div>
+    <p class="empty" id="empty">Aucune chaîne ne correspond à votre recherche.</p>
+  </div>
+</section>
+
+<!-- ============ GUIDE TV ============ -->
+<section id="guide-tv" data-section="guide">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Guide TV</span>
+      <h2>Ce soir à la télé, <span class="grad">en un coup d'œil</span></h2>
+      <p>Cliquez sur un programme pour voir sa fiche, le regarder en direct ou programmer un rappel 🔔. La ligne rouge indique l'heure actuelle.</p>
+    </div>
+    <div class="epg reveal" id="epg" tabindex="0" aria-label="Grille des programmes"></div>
+    <div class="epg-pop panel" id="epg-pop" hidden="" role="dialog" aria-label="Fiche programme"></div>
+  </div>
+</section>
+
+<!-- ============ TARIFS ============ -->
+<section id="tarifs" data-section="pricing">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Tarifs</span>
+      <h2><span data-k="pricingTitle">Une formule pour</span> <span class="grad" data-k="pricingHighlight">chaque envie</span></h2>
+      <p data-k="pricingLead">Un paiement par an, un écran, aucune surprise. Changez de formule quand vous voulez.</p>
+    </div>
+    <div class="switch reveal" hidden="">
+      <span id="lbl-m" class="on">Mensuel</span>
+      <button class="toggle" id="billing" role="switch" aria-checked="false" aria-label="Facturation annuelle"></button>
+      <span id="lbl-y">Annuel</span><span class="save" id="save">−20 %</span>
+    </div>
+    <div class="plans" id="plans"><div class="plan ">
+        
+        <h3>Basique</h3>
+        <div class="price"><b>45 €</b><span>/ an</span></div>
+           <div class="billed">soit 3,75 € par mois · paiement unique annuel</div>
+        <ul><li>1 écran</li><li>Qualité Full HD</li><li>Chaînes du catalogue</li><li>Replay 24 h</li><li>Support par e-mail</li></ul>
+        <button type="button" class="btn ghost block" data-order="1">Choisir Basique</button>
+      </div><div class="plan pop">
+        <span class="tag">Le plus choisi</span>
+        <h3>Premium</h3>
+        <div class="price"><b>55 €</b><span>/ an</span></div>
+           <div class="billed">soit 4,58 € par mois · paiement unique annuel</div>
+        <ul><li>1 écran</li><li>Qualité 4K HDR</li><li>Chaînes du catalogue + films et séries</li><li>Replay 7 jours</li><li>Support 7 j/7</li></ul>
+        <button type="button" class="btn  block" data-order="2">Choisir Premium</button>
+      </div><div class="plan ">
+        
+        <h3>VIP</h3>
+        <div class="price"><b>75 €</b><span>/ an</span></div>
+           <div class="billed">soit 6,25 € par mois · paiement unique annuel</div>
+        <ul><li>1 écran</li><li>Qualité 4K HDR</li><li>Tout le catalogue</li><li>Replay 30 jours + enregistrement cloud</li><li>Support prioritaire WhatsApp</li></ul>
+        <button type="button" class="btn ghost block" data-order="3">Choisir VIP</button>
+      </div></div>
+    <div class="trust-badges reveal">
+      <div><span aria-hidden="true">🔒</span><b>Paiement sécurisé</b><small>PayPal, chiffrement SSL</small></div>
+      <div><span aria-hidden="true">📅</span><b>Sans reconduction</b><small>aucun prélèvement automatique</small></div>
+      <div><span aria-hidden="true">🛟</span><b>Support 7 j/7</b><small>assistant, WhatsApp, e-mail</small></div>
+      <div><span aria-hidden="true">🇪🇺</span><b>Données protégées</b><small>conforme RGPD</small></div>
+    </div>
+    <details class="compare-wrap reveal">
+      <summary class="compare-title">Voir le comparatif détaillé des formules</summary>
+      <div class="table-wrap"><table class="table compare" id="compare"><thead><tr><th scope="col">Fonctionnalité</th><th scope="col" class="">Basique</th><th scope="col" class="pop">Premium</th><th scope="col" class="">VIP</th></tr></thead><tbody><tr><th scope="row">Écrans simultanés</th><td class="">1</td><td class="pop">1</td><td class="">1</td></tr><tr><th scope="row">Qualité d'image</th><td class="">Full HD</td><td class="pop">4K HDR</td><td class="">4K HDR</td></tr><tr><th scope="row">Chaînes en direct</th><td class=""><span class="yes" aria-label="Inclus">✓</span></td><td class="pop"><span class="yes" aria-label="Inclus">✓</span></td><td class=""><span class="yes" aria-label="Inclus">✓</span></td></tr><tr><th scope="row">Films et séries</th><td class=""><span class="no" aria-label="Non inclus">—</span></td><td class="pop"><span class="yes" aria-label="Inclus">✓</span></td><td class=""><span class="yes" aria-label="Inclus">✓</span></td></tr><tr><th scope="row">Replay</th><td class="">24 h</td><td class="pop">7 jours</td><td class="">30 jours</td></tr><tr><th scope="row">Enregistrement cloud</th><td class=""><span class="no" aria-label="Non inclus">—</span></td><td class="pop"><span class="no" aria-label="Non inclus">—</span></td><td class=""><span class="yes" aria-label="Inclus">✓</span></td></tr><tr><th scope="row">Contrôle parental</th><td class=""><span class="yes" aria-label="Inclus">✓</span></td><td class="pop"><span class="yes" aria-label="Inclus">✓</span></td><td class=""><span class="yes" aria-label="Inclus">✓</span></td></tr><tr><th scope="row">Support</th><td class="">E-mail</td><td class="pop">7 j/7</td><td class="">Prioritaire WhatsApp</td></tr><tr><th scope="row">Prix</th><td class=""><b>45 €</b> / an</td><td class="pop"><b>55 €</b> / an</td><td class=""><b>75 €</b> / an</td></tr>
+     <tr><th scope="row"></th><td class=""><button type="button" class="btn small ghost" data-order="1">Choisir</button></td><td class="pop"><button type="button" class="btn small " data-order="2">Choisir</button></td><td class=""><button type="button" class="btn small ghost" data-order="3">Choisir</button></td></tr></tbody></table></div>
+    </details>
+    <p class="fine">Prix TTC · paiement unique par an · sans reconduction automatique.</p>
+  </div>
+</section>
+
+<!-- ============ ÉTAPES ============ -->
+<section data-section="steps" style="background:var(--bg2)" hidden="">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Démarrage</span>
+      <h2><span data-k="stepsTitle">Prêt en</span> <span class="grad" data-k="stepsHighlight">3 minutes</span></h2>
+    </div>
+    <div class="steps" id="steps"><div class="step reveal"><div class="n">1</div><h3>Choisissez votre formule</h3><p>Sélectionnez l'offre adaptée à votre foyer.</p></div><div class="step reveal"><div class="n">2</div><h3>Installez l'application</h3><p>Disponible sur TV, mobile, ordinateur et navigateur.</p></div><div class="step reveal"><div class="n">3</div><h3>Profitez</h3><p>Connectez-vous et lancez votre première chaîne.</p></div></div>
+  </div>
+</section>
+
+<!-- ============ APPAREILS ============ -->
+<section id="appareils" data-section="devices" hidden="">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Multi-écrans</span>
+      <h2><span data-k="devicesTitle">Sur</span> <span class="grad" data-k="devicesHighlight">tous vos écrans</span></h2>
+      <p data-k="devicesLead">Commencez un film sur la TV du salon, terminez-le dans le train.</p>
+    </div>
+    <div class="apps reveal" id="apps"><div class="app"><div aria-hidden="true">📺</div><b>Smart TV</b><span>Samsung, LG, Android TV</span></div><div class="app"><div aria-hidden="true">🔥</div><b>Fire TV</b><span>Toutes générations</span></div><div class="app"><div aria-hidden="true">🍏</div><b>Apple TV</b><span>tvOS 16 et +</span></div><div class="app"><div aria-hidden="true">📱</div><b>Mobile</b><span>iPhone &amp; Android</span></div><div class="app"><div aria-hidden="true">💻</div><b>Ordinateur</b><span>Windows &amp; macOS</span></div><div class="app"><div aria-hidden="true">🌐</div><b>Web</b><span>Chrome, Edge, Safari</span></div></div>
+  </div>
+</section>
+
+<!-- ============ AVIS ============ -->
+<section id="avis" data-section="reviews" hidden="">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Avis</span>
+      <h2>Ils regardent <span class="grad">autrement</span></h2>
+      <p>Ce que disent nos abonnés.</p>
+    </div>
+    <div class="reviews reveal" id="reviews"></div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section id="faq" data-section="faq" style="background:var(--bg2)">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">FAQ</span>
+      <h2><span data-k="faqTitle">Questions</span> <span class="grad" data-k="faqHighlight">fréquentes</span></h2>
+    </div>
+    <div class="faq reveal" id="faq-list"><details open=""><summary>Quel débit internet faut-il ?</summary><p>10 Mbit/s suffisent pour la HD et 25 Mbit/s pour la 4K. Le streaming adaptatif ajuste automatiquement la qualité.</p></details><details><summary>Puis-je regarder sur plusieurs écrans en même temps ?</summary><p>Chaque abonnement inclut 1 écran à la fois. Vous pouvez installer l'application sur tous vos appareils, mais regarder sur un seul écran simultanément. Pour 2 écrans en même temps, il faut 2 abonnements.</p></details><details><summary>Y a-t-il un engagement ?</summary><p>Non. Toutes les formules sont sans engagement et résiliables à tout moment.</p></details><details><summary>Le contrôle parental est-il inclus ?</summary><p>Oui, le contrôle parental par code est inclus dans toutes les formules.</p></details><details><summary>Comment contacter le support ?</summary><p>Via le formulaire de contact : chaque message est traité depuis l'espace d'administration.</p></details></div>
+  </div>
+</section>
+
+<!-- ============ CTA + CONTACT ============ -->
+<section id="contact" data-section="contact">
+  <div class="wrap">
+    <div class="cta-box reveal">
+      <h2 data-k="ctaTitle">Prêt à changer de télé ?</h2>
+      <p data-k="ctaText">Rejoignez la plateforme et découvrez une nouvelle façon de regarder vos programmes.</p>
+      <a class="btn" href="#tarifs" data-k="ctaButton">Choisir ma formule →</a>
+    </div>
+
+    <div class="contact-grid" style="margin-top:80px">
+      <div class="contact-info reveal">
+        <span class="eyebrow">Contact</span>
+        <h2 style="font-size:clamp(1.8rem,3.5vw,2.6rem);letter-spacing:-.03em;margin:14px 0 10px" data-k="contactTitle">Parlons-en</h2>
+        <p class="muted" data-k="contactLead">Une question sur une formule ou un appareil ? Notre équipe vous répond rapidement.</p>
+        <div class="item"><i aria-hidden="true">✉️</i><div><b>E-mail</b><br><a class="muted" id="mail-link" href="mailto:contact@hayaiptv.com" data-set="email">contact@hayaiptv.com</a></div></div>
+        <div class="item" id="wa-item"><i aria-hidden="true" style="background:#25d366">💬</i><div><b>WhatsApp</b><br><a class="muted" id="wa-link" href="https://wa.me/213555439766?text=Bonjour%2C%20j'ai%20une%20question%20sur%20Haya%20IPTV." target="_blank" rel="noopener">+213 555 43 97 66</a></div></div>
+        <div class="item"><i aria-hidden="true">⏰</i><div><b>Disponibilité</b><br><span class="muted" data-k="contactHours">7 jours sur 7, de 9 h à 21 h</span></div></div>
+        <div class="item"><i aria-hidden="true">💬</i><div><b>Réponse moyenne</b><br><span class="muted" data-k="contactDelay">moins de 2 heures</span></div></div>
+      </div>
+      <form class="contact reveal" id="contact-form" name="contact" method="POST" data-netlify="true" netlify-honeypot="site-web">
+        <input type="hidden" name="form-name" value="contact">
+        <p hidden=""><label>Ne pas remplir : <input name="site-web" tabindex="-1" autocomplete="off"></label></p>
+        <div class="two">
+          <label class="field">Nom<input name="name" placeholder="Votre nom" autocomplete="name" maxlength="80" required=""></label>
+          <label class="field">E-mail<input name="email" type="email" placeholder="vous@exemple.com" autocomplete="email" maxlength="120" required=""></label>
+        </div>
+        <label class="field">Téléphone <span class="muted" style="font-weight:500">(facultatif)</span><input name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+33 6 12 34 56 78" maxlength="20" pattern="[0-9+ \(\)\.\-]{6,20}"></label>
+        <label class="field">Message<textarea name="message" rows="5" placeholder="Comment pouvons-nous vous aider ?" maxlength="2000" required=""></textarea></label>
+        <button class="btn block" type="submit">Envoyer le message</button>
+        <p class="ok-msg" id="ok-msg">✓ Merci ! Votre message a bien été envoyé.</p>
+      </form>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a href="/" class="brand" aria-label="Haya IPTV — accueil"><img class="mark" src="logo.svg" alt="" width="38" height="38"><span class="word" data-brand="">haya<b>iptv</b></span></a>
+        <p data-set="slogan">La télévision nouvelle génération</p>
+      </div>
+      <div><p class="foot-title">Produit</p><a href="#iptv" data-section="iptv">C'est quoi l'IPTV ?</a><a href="#fonctionnalites" data-section="features" hidden="">Fonctionnalités</a><a href="/channels">Toutes les chaînes</a><a href="#guide-tv">Guide TV</a><a href="#tarifs">Tarifs</a><a href="#appareils" data-section="devices" hidden="">Appareils</a></div>
+      <div><p class="foot-title">Aide</p><a href="#faq">FAQ</a><a href="/blog/">Blog &amp; guides</a><a href="/contact">Contact</a><a href="status.html">État du service</a></div>
+      <div><p class="foot-title">Légal</p><a href="mentions-legales.html">Mentions légales</a><a href="mentions-legales.html#confidentialite">Confidentialité</a><a href="mentions-legales.html#cgv">CGV</a><a href="mentions-legales.html#cgu">CGU</a></div>
+    </div>
+    <div class="legal">
+      <span>© 2026 <span data-set="name">HayaIPTV</span> — Tous droits réservés.<span id="author-line" hidden=""> Conçu et développé par <b data-set="author"></b>.</span></span>
+      <span data-k="footerNote">HayaIPTV — la télévision par Internet : direct, replay et guide TV.</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Lecteur vidéo d'aperçu (tv.js) -->
+<div class="modal player" id="player" hidden="" role="dialog" aria-modal="true" aria-label="Lecteur vidéo">
+  <div class="pl-box">
+    <canvas width="1280" height="720" aria-hidden="true"></canvas>
+    <div class="pl-top"><span class="live">EN DIRECT</span><span class="pl-ch"></span><button type="button" class="pl-btn" data-pl="close" aria-label="Fermer le lecteur">✕</button></div>
+    <div class="pl-bottom">
+      <div class="pl-title"></div><div class="pl-time muted"></div>
+      <div class="pl-bar"><i></i></div>
+      <div class="pl-controls">
+        <button type="button" class="pl-btn" data-pl="prev" aria-label="Chaîne précédente">⏮</button>
+        <button type="button" class="pl-btn big" data-pl="play" aria-label="Pause">⏸</button>
+        <button type="button" class="pl-btn" data-pl="next" aria-label="Chaîne suivante">⏭</button>
+        <button type="button" class="pl-btn" data-pl="mute" aria-label="Son">🔇</button>
+        <span class="pl-hint">Aperçu · ↑↓ chaînes · Espace pause · F plein écran</span>
+        <button type="button" class="pl-btn" data-pl="full" aria-label="Plein écran">⛶</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="site-toast" role="status"></div>
+
+<!-- Tunnel de commande (mode test) : rempli par checkout.js -->
+<div class="modal" id="checkout" hidden="" role="dialog" aria-modal="true" aria-labelledby="co-title">
+  <div class="modal-box">
+    <button type="button" class="modal-x" data-close="" aria-label="Fermer">✕</button>
+    <div class="test-banner">🧪 Mode test — aucun paiement réel n'est effectué</div>
+    <ol class="co-steps"><li class="on">1. Formule</li><li>2. Paiement</li><li>3. Confirmation</li></ol>
+    <div id="co-body"></div>
+  </div>
+</div>
+
+<!-- Bouton WhatsApp (numéro modifiable dans Admin > Paramètres) -->
+<a class="wa-fab" id="wa-fab" href="https://wa.me/213555439766?text=Bonjour%2C%20j'ai%20une%20question%20sur%20Haya%20IPTV." target="_blank" rel="noopener" aria-label="Nous écrire sur WhatsApp">
+  <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#fff" d="M16 3C8.8 3 3 8.6 3 15.6c0 2.5.7 4.8 2 6.8L3.6 29l6.8-1.8c1.8 1 3.8 1.5 5.6 1.5 7.2 0 13-5.6 13-12.6S23.2 3 16 3zm0 23.4c-1.8 0-3.6-.5-5.2-1.4l-.4-.2-4 1 1.1-3.8-.3-.4c-1.1-1.7-1.6-3.6-1.6-5.5C5.6 10 10.3 5.4 16 5.4s10.4 4.6 10.4 10.2S21.7 26.4 16 26.4zm5.7-7.6c-.3-.2-1.8-.9-2.1-1s-.5-.2-.7.2-.8 1-1 1.2-.4.2-.7.1c-.3-.2-1.3-.5-2.5-1.5-.9-.8-1.5-1.8-1.7-2.1s0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.5s0-.4 0-.5l-.9-2.3c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4s-1 1-1 2.5 1.1 2.9 1.2 3.1c.2.2 2.1 3.3 5.2 4.6 2.6 1 3.1.8 3.7.8s1.8-.7 2.1-1.5.3-1.4.2-1.5c-.1-.2-.3-.3-.6-.4z"></path></svg>
+  <span class="wa-label">WhatsApp</span>
+</a>
+
+<!-- Assistant virtuel « Haya » : piloté par assistant.js -->
+<aside class="bot" id="bot" aria-label="Assistant virtuel">
+  <div class="bot-panel" role="dialog" aria-label="Discussion avec l'assistant">
+    <div class="bot-head">
+      <img class="bot-avatar" src="logo.svg" alt="" width="40" height="40">
+      <div><b class="bot-name">Haya</b><small>● En ligne — répond en quelques secondes</small></div>
+      <button type="button" class="bot-close" aria-label="Fermer l'assistant">✕</button>
+    </div>
+    <div class="bot-log" aria-live="polite"></div>
+    <form autocomplete="off">
+      <input type="text" placeholder="Écrivez votre question…" aria-label="Votre question" maxlength="300">
+      <button type="submit" aria-label="Envoyer">➤</button>
+    </form>
+    <div class="bot-foot">Assistant automatique · un conseiller peut prendre le relais</div>
+  </div>
+  <button type="button" class="bot-fab" aria-label="Ouvrir l'assistant" aria-expanded="false">💬</button>
+</aside>
+
+<script src="data.js?v=9"></script>
+<script>
+  const data = hayaLoad();
+  const C = data.content;
+  let yearly = false, cat = "Toutes", query = "";
+
+  /* 1) Couleurs, textes et nom de la plateforme */
+  hayaApplyTheme(data.theme);
+  hayaThemeButton(document.getElementById("theme-btn"));
+  document.querySelectorAll("[data-k]").forEach(el => el.textContent = C[el.dataset.k] ?? "");
+  document.querySelectorAll("[data-set]").forEach(el => el.textContent = data.settings[el.dataset.set] ?? "");
+  // Logo texte : première partie en gras, reste en léger (ex. « Haya IPTV » → haya + stream)
+  const nm = data.settings.name.toLowerCase(), cut = nm.includes(" ") ? nm.indexOf(" ") : (nm.startsWith("haya") ? 4 : nm.length); const w1 = nm.slice(0, cut).trim(), w2 = [nm.slice(cut).trim()];
+  document.querySelectorAll("[data-brand]").forEach(el => el.innerHTML = `${esc(w1)}<b>${esc(w2.join(" "))}</b>`);
+  document.getElementById("stat-cat").textContent = new Set(data.channels.map(c => c.cat)).size;
+  document.getElementById("author-line").hidden = !String(data.settings.author || "").trim();
+  const mail = document.getElementById("mail-link"); mail.href = "mailto:" + data.settings.email;
+
+  // Sections affichées (Admin > Sections affichées). Les avis n'apparaissent que s'il y en a.
+  const S = Object.assign({}, data.sections, { reviews: data.sections.reviews && data.reviews.length > 0 });
+  document.querySelectorAll("[data-section]").forEach(el => el.hidden = S[el.dataset.section] === false);
+
+  // WhatsApp : bouton flottant + ligne dans le bloc contact (masqués si aucun numéro)
+  const wa = hayaWhatsAppLink(data.settings);
+  ["wa-fab", "wa-item"].forEach(id => document.getElementById(id).hidden = !wa);
+  if (wa) {
+    document.getElementById("wa-fab").href = wa;
+    const l = document.getElementById("wa-link"); l.href = wa; l.textContent = hayaPhonePretty(data.settings.whatsapp);
+  }
+
+  /* 2) Navigation */
+  const header = document.getElementById("top"), links = document.getElementById("links"), burger = document.getElementById("burger");
+  const onScroll = () => header.classList.toggle("scrolled", scrollY > 10);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  burger.addEventListener("click", () => { const o = links.classList.toggle("open"); burger.setAttribute("aria-expanded", o); });
+  links.addEventListener("click", e => { if (e.target.tagName === "A") links.classList.remove("open"); });
+
+  /* 3) Écran TV animé */
+  document.getElementById("tv-rail").innerHTML = data.channels.slice(0, 5).map((c, i) => `<span class="${i === 1 ? "on" : ""}">${esc(c.icon)}</span>`).join("");
+  let tvi = 0;
+  function tvTick() {
+    if (!data.channels.length) return;
+    const c = data.channels[tvi++ % data.channels.length];
+    document.getElementById("tv-ch").textContent = c.name + " · " + c.cat;
+    document.getElementById("tv-prog").textContent = c.program || "Programme en cours";
+    document.getElementById("tv-clock").textContent = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  }
+  tvTick(); setInterval(tvTick, 3200);
+
+  /* 4) Bandeau des appareils (dupliqué pour une boucle continue) */
+  const dev = data.devices.map(d => `<span>${esc(d.icon)} ${esc(d.title)}</span>`).join("");
+  document.getElementById("marquee").innerHTML = dev + dev;
+
+  /* 5) Fonctionnalités (les 2 premières ont un visuel) */
+  const tileClass = ["t-a", "t-b", "t-c", "t-d", "t-e"];
+  document.getElementById("features").innerHTML = data.features.map((f, i) => `
+    <div class="tile ${tileClass[i] || "t-c"} reveal">
+      <div class="ico" aria-hidden="true">${esc(f.icon)}</div><h3>${esc(f.title)}</h3><p>${esc(f.text)}</p>
+      ${i === 0 ? '<div class="mini-chart">' + [35,55,45,70,62,85,78,95,88,100].map(h => `<i style="height:${h}%"></i>`).join("") + "</div>" : ""}
+      ${i === 1 ? `<div class="big-num grad">${esc(C.featureBigNumber)}</div>` : ""}
+    </div>`).join("");
+
+  /* 6) Chaînes : onglets + recherche */
+  const cats = ["Toutes", ...new Set(data.channels.map(c => c.cat))];
+  const tabs = document.getElementById("tabs");
+  tabs.innerHTML = cats.map(c => `<button class="tab ${c === cat ? "active" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`).join("");
+  tabs.addEventListener("click", e => {
+    if (!e.target.dataset.cat) return;
+    cat = e.target.dataset.cat;
+    tabs.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t === e.target));
+    drawChannels();
+  });
+  document.getElementById("q").addEventListener("input", e => { query = e.target.value.toLowerCase(); drawChannels(); });
+  function drawChannels() {
+    const list = data.channels.filter(c => (cat === "Toutes" || c.cat === cat) && (c.name + c.cat + (c.program || "")).toLowerCase().includes(query));
+    document.getElementById("channels").innerHTML = list.map(c => `<article class="ch" data-play="${c.id}" tabindex="0" role="button" aria-label="Aperçu de ${esc(c.name)}">
+        <div class="ch-top"><div class="ch-logo" aria-hidden="true">${esc(c.icon)}</div><div><h3 class="ch-name">${esc(c.name)}</h3><small>${esc(c.cat)}</small></div></div>
+        <div class="ch-now"><em>● LIVE</em>${esc(c.program || "Programme en cours")}</div>
+        <div class="ch-bar"><i style="width:${20 + (c.id * 37) % 70}%"></i></div>
+      </article>`).join("");
+    document.getElementById("empty").style.display = list.length ? "none" : "block";
+  }
+  drawChannels();
+
+  /* 7) Tarifs : deux modes (réglable dans Admin > Textes du site > Tarifs)
+        - billingPeriod "an"   : prix annuels, pas de bouton mensuel/annuel
+        - billingPeriod "mois" : prix mensuels + bouton annuel avec remise   */
+  const annualOnly = (C.billingPeriod || "mois") === "an";
+  if (annualOnly) { yearly = true; document.querySelector(".switch").hidden = true; }
+  const disc = (parseFloat(C.yearlyDiscount) || 0) / 100;
+  document.getElementById("save").textContent = `−${C.yearlyDiscount} %`;
+  const billing = document.getElementById("billing");
+  billing.addEventListener("click", () => {
+    yearly = !yearly; billing.setAttribute("aria-checked", yearly);
+    document.getElementById("lbl-m").classList.toggle("on", !yearly);
+    document.getElementById("lbl-y").classList.toggle("on", yearly);
+    drawPlans();
+  });
+  function drawPlans() {
+    document.getElementById("plans").innerHTML = data.plans.map(p => {
+      const m = parseFloat(p.price) || 0, perMonth = yearly ? m * (1 - disc) : m;
+      const priceHtml = annualOnly
+        ? `<div class="price"><b>${euro(m).replace(",00", "")} €</b><span>/ an</span></div>
+           <div class="billed">soit ${euro(m / 12)} € par mois · paiement unique annuel</div>`
+        : `<div class="price"><b>${euro(perMonth)} €</b><span>/ mois</span></div>
+           <div class="billed">${yearly ? `soit ${euro(perMonth * 12)} € facturés par an` : "facturation mensuelle"}</div>`;
+      return `<div class="plan ${p.popular ? "pop" : ""}">
+        ${p.popular ? '<span class="tag">Le plus choisi</span>' : ""}
+        <h3>${esc(p.name)}</h3>
+        ${priceHtml}
+        <ul>${p.features.map(f => `<li>${esc(f)}</li>`).join("")}</ul>
+        <button type="button" class="btn ${p.popular ? "" : "ghost"} block" data-order="${p.id}">Choisir ${esc(p.name)}</button>
+      </div>`;
+    }).join("");
+  }
+  drawPlans();
+  // Tableau comparatif (données : data.compare, une valeur par formule)
+  document.getElementById("compare").innerHTML =
+    `<thead><tr><th scope="col">Fonctionnalité</th>${data.plans.map(p => `<th scope="col" class="${p.popular ? "pop" : ""}">${esc(p.name)}</th>`).join("")}</tr></thead><tbody>` +
+    data.compare.map(r => `<tr><th scope="row">${esc(r.label)}</th>${data.plans.map((p, i) => { const v = r.values[i] ?? "—";
+      return `<td class="${p.popular ? "pop" : ""}">${v === "✓" ? '<span class="yes" aria-label="Inclus">✓</span>' : v === "—" ? '<span class="no" aria-label="Non inclus">—</span>' : esc(v)}</td>`; }).join("")}</tr>`).join("") +
+    `<tr><th scope="row">Prix</th>${data.plans.map(p => `<td class="${p.popular ? "pop" : ""}"><b>${euro(p.price).replace(",00", "")} €</b>${annualOnly ? " / an" : " / mois"}</td>`).join("")}</tr>
+     <tr><th scope="row"></th>${data.plans.map(p => `<td class="${p.popular ? "pop" : ""}"><button type="button" class="btn small ${p.popular ? "" : "ghost"}" data-order="${p.id}">Choisir</button></td>`).join("")}</tr></tbody>`;
+  document.getElementById("compare").addEventListener("click", e => { const b = e.target.closest("[data-order]"); if (b && window.hayaOpenCheckout) hayaOpenCheckout(b.dataset.order, yearly); });
+
+  // Bouton « Choisir » → ouvre le tunnel de commande (checkout.js)
+  document.getElementById("plans").addEventListener("click", e => {
+    const b = e.target.closest("[data-order]");
+    if (b && window.hayaOpenCheckout) hayaOpenCheckout(b.dataset.order, yearly);
+  });
+
+  /* 8) Étapes, appareils, FAQ */
+  document.getElementById("steps").innerHTML = data.steps.map((s, i) => `<div class="step reveal"><div class="n">${i + 1}</div><h3>${esc(s.title)}</h3><p>${esc(s.text)}</p></div>`).join("");
+  document.getElementById("apps").innerHTML = data.devices.map(d => `<div class="app"><div aria-hidden="true">${esc(d.icon)}</div><b>${esc(d.title)}</b><span>${esc(d.text)}</span></div>`).join("");
+  document.getElementById("faq-list").innerHTML = data.faq.map((f, i) => `<details ${i === 0 ? "open" : ""}><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("");
+  // Avis clients réels (Admin > Sections & FAQ > Avis)
+  document.getElementById("reviews").innerHTML = data.reviews.map(r => {
+    const n = Math.max(1, Math.min(5, parseInt(r.rating) || 5));
+    return `<figure class="review"><div class="stars" aria-label="${n} sur 5">${"★".repeat(n)}<span>${"★".repeat(5 - n)}</span></div>
+      <blockquote>${esc(r.text)}</blockquote>
+      <figcaption><span class="avatar" aria-hidden="true">${esc(r.name.charAt(0))}</span>${esc(r.name)}</figcaption></figure>`;
+  }).join("");
+  // Petite notification à l'écran (utilisée par les rappels du guide TV)
+  window.hayaToast = m => { const t = document.getElementById("site-toast"); t.textContent = m; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 4000); };
+  // Données structurées FAQ pour Google (mises à jour avec le contenu de l'admin)
+  document.getElementById("ld-faq").textContent = JSON.stringify({
+    "@context": "https://schema.org", "@type": "FAQPage",
+    "mainEntity": data.faq.map(f => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } }))
+  });
+
+  /* 9) Formulaire de contact → messages visibles dans /admin */
+  document.getElementById("contact-form").addEventListener("submit", e => {
+    e.preventDefault();
+    const f = new FormData(e.target), d = hayaLoad();
+    if (f.get("site-web")) return; // piège anti-robots (honeypot)
+    // a) copie locale : le message apparaît dans /admin (démo)
+    d.messages.unshift({ id: hayaNextId(d.messages), name: f.get("name"), email: f.get("email"), phone: (f.get("phone") || "").trim(), message: f.get("message"), date: new Date().toISOString().slice(0, 10), read: false });
+    hayaSave(d);
+    // b) envoi réel : Netlify Forms reçoit le message (visible dans Netlify > Forms, avec notification e-mail)
+    fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(f).toString() }).catch(() => {});
+    e.target.reset();
+    document.getElementById("ok-msg").style.display = "block";
+  });
+
+  /* 10) Animations d'apparition (le contenu reste visible si JavaScript est désactivé) */
+  document.documentElement.classList.add("js");
+  const io = new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting) { x.target.classList.add("in"); io.unobserve(x.target); } }), { threshold: .12 });
+  document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+</script>
+<script src="checkout.js?v=9"></script>
+<script src="assistant.js?v=9"></script>
+<script src="tv.js?v=9"></script>
+<script>
+  // Application installable (PWA) : enregistre le service worker si le navigateur le permet
+  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("/sw.js").catch(() => {});
+  // Mise à jour automatique : si une nouvelle version du site est publiée, la page se recharge
+  // (sauf pendant une commande) → les téléphones n'utilisent jamais un ancien code.
+  const SITE_VERSION = "9";
+  const checkVersion = () => fetch("/version.txt", { cache: "no-store" }).then(r => r.ok ? r.text() : SITE_VERSION)
+    .then(v => { if (v.trim() !== SITE_VERSION && document.getElementById("checkout").hidden) location.reload(); }).catch(() => {});
+  setInterval(checkVersion, 60000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkVersion(); });
+</script>
+
+
+</body></html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Espace client — Haya IPTV</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#05070f">
+  <script>try { const t = localStorage.getItem("haya-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    .client { max-width: 980px; margin: 0 auto; padding: 110px 20px 60px; }
+    .sub-card { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: center; }
+    .progress { height: 10px; border-radius: 99px; background: var(--surface-2); overflow: hidden; margin: 12px 0 6px; }
+    .progress i { display: block; height: 100%; background: linear-gradient(90deg, var(--brand-2), var(--brand)); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 760px) { .grid2, .sub-card { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<header class="top scrolled">
+  <nav class="wrap nav" aria-label="Navigation principale">
+    <a href="/" class="brand" aria-label="Haya IPTV — accueil"><img class="mark" src="logo.svg" alt="" width="38" height="38"><span class="word">haya<b>iptv</b></span></a>
+    <div class="nav-cta"><button type="button" class="theme-btn" id="theme-btn">☀️</button><a class="btn small ghost" href="/">← Retour au site</a><button class="btn small" id="logout" hidden>Déconnexion</button></div>
+  </nav>
+</header>
+
+<main class="client">
+  <!-- Connexion -->
+  <section id="login" style="padding:0">
+    <form class="panel" id="login-form" style="max-width:420px;margin:0 auto;display:grid;gap:14px">
+      <span class="eyebrow">Espace client</span>
+      <h1 style="font-size:1.8rem;margin:0">Connexion</h1>
+      <p class="muted" style="margin:0">Retrouvez votre abonnement, vos reçus et vos informations.</p>
+      <label class="field">E-mail<input name="email" type="email" autocomplete="email" required></label>
+      <label class="field">Mot de passe<input name="password" type="password" autocomplete="current-password" required></label>
+      <p class="err" id="login-err" role="alert"></p>
+      <button class="btn block" type="submit" id="login-btn">Se connecter</button>
+      <p class="muted" style="margin:0;font-size:.85rem">Pas encore de compte ? Il est créé automatiquement lors de votre <a href="/#tarifs" style="color:var(--brand-2)">première commande</a>.<br>
+        Mot de passe oublié ? <a href="/#contact" style="color:var(--brand-2)">Contactez le support</a>.</p>
+    </form>
+  </section>
+
+  <!-- Tableau de bord du client -->
+  <section id="dash" style="padding:0" hidden></section>
+</main>
+<div class="toast" id="toast">Enregistré ✓</div>
+
+<script src="data.js"></script>
+<script>
+  /* Espace client : session de 30 min dans l'onglet (sessionStorage), mots de passe hachés (PBKDF2). */
+  const SESSION_MS = 30 * 60 * 1000;
+  let data = hayaLoad();
+  hayaApplyTheme(data.theme);
+  hayaThemeButton(document.getElementById("theme-btn"));
+  const me = () => { try { const s = JSON.parse(sessionStorage.getItem("haya-client")); return s && s.until > Date.now() ? data.customers.find(c => c.id === s.id) : null; } catch (e) { return null; } };
+  const setSession = id => { try { id ? sessionStorage.setItem("haya-client", JSON.stringify({ id, until: Date.now() + SESSION_MS })) : sessionStorage.removeItem("haya-client"); } catch (e) {} };
+  function toast(m) { const t = document.getElementById("toast"); t.textContent = m; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 1800); }
+  const addYear = d => { const x = new Date(d + "T12:00"); x.setFullYear(x.getFullYear() + 1); return x; };
+  const fr = d => new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+
+  function show() {
+    data = hayaLoad();
+    const c = me();
+    document.getElementById("login").hidden = !!c;
+    document.getElementById("dash").hidden = !c;
+    document.getElementById("logout").hidden = !c;
+    if (c) render(c);
+  }
+
+  // ---------- Connexion ----------
+  document.getElementById("login-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = new FormData(e.target), err = document.getElementById("login-err"), btn = document.getElementById("login-btn");
+    const lock = hayaLockState("client");
+    if (lock.until > Date.now()) { err.textContent = `Trop d'essais. Réessayez dans ${Math.ceil((lock.until - Date.now()) / 60000)} min.`; err.style.display = "block"; return; }
+    btn.disabled = true; btn.textContent = "Vérification…";
+    const c = hayaLoad().customers.find(x => x.email.toLowerCase() === String(f.get("email")).trim().toLowerCase());
+    // On calcule toujours une empreinte (même si l'e-mail n'existe pas) pour ne pas révéler quels e-mails sont inscrits
+    const h = await hayaHash(f.get("password"), c ? c.salt : "00000000000000000000000000000000", c ? c.iter : 150000);
+    btn.disabled = false; btn.textContent = "Se connecter";
+    if (c && hayaSafeEqual(h, c.hash)) { hayaLockReset("client"); setSession(c.id); e.target.reset(); err.style.display = "none"; show(); }
+    else { const s = hayaLockFail("client"); err.textContent = s.until > Date.now() ? "Trop d'essais : connexion bloquée 5 minutes." : "E-mail ou mot de passe incorrect."; err.style.display = "block"; }
+  });
+  document.getElementById("logout").addEventListener("click", () => { setSession(null); show(); });
+
+  // ---------- Tableau de bord ----------
+  function render(c) {
+    const orders = data.orders.filter(o => o.customerId === c.id || o.email.toLowerCase() === c.email.toLowerCase());
+    const active = orders.find(o => o.status === "payée" && addYear(o.date) > new Date());
+    let sub = `<div class="panel"><h2 style="margin:0 0 6px">Aucun abonnement actif</h2><p class="muted" style="margin:0 0 14px">Choisissez une formule pour commencer.</p><a class="btn" href="/#tarifs">Voir les formules</a></div>`;
+    if (active) {
+      const start = new Date(active.date + "T12:00"), end = addYear(active.date), total = end - start, left = Math.max(0, end - new Date());
+      const days = Math.ceil(left / 86400000), pct = Math.round((1 - left / total) * 100);
+      sub = `<div class="panel sub-card"><div>
+          <span class="badge read">● Actif</span>
+          <h2 style="margin:8px 0 2px">Formule ${esc(active.plan)}</h2>
+          <p class="muted" style="margin:0">Du ${fr(start)} au ${fr(end)} · 1 écran</p>
+          <div class="progress"><i style="width:${pct}%"></i></div>
+          <small class="muted">${days} jour${days > 1 ? "s" : ""} restant${days > 1 ? "s" : ""} — sans reconduction automatique</small>
+        </div>
+        <div style="display:grid;gap:8px"><a class="btn" href="/#tarifs">${days < 30 ? "Renouveler" : "Changer de formule"}</a>
+          <button class="btn ghost" data-receipt="${active.id}">🧾 Reçu</button></div></div>`;
+    }
+    const wa = hayaWhatsAppLink(data.settings);
+    document.getElementById("dash").innerHTML = `
+      <div class="main-head" style="margin-bottom:20px"><div><span class="eyebrow">Espace client</span><h1 style="font-size:2rem;margin:10px 0 0">Bonjour ${esc(c.name.split(" ")[0])} 👋</h1></div></div>
+      ${sub}
+      <div class="panel" style="margin-top:16px"><h3>🧾 Mes commandes</h3>
+        <div class="table-wrap"><table class="table"><tr><th>Réf.</th><th>Date</th><th>Formule</th><th>Montant</th><th>Statut</th><th></th></tr>
+        ${orders.map(o => `<tr><td><b>${esc(o.ref)}</b></td><td>${esc(o.date)}</td><td>${esc(o.plan)}</td><td>${euro(o.amount)} €</td><td><span class="badge ${o.status === "payée" ? "read" : "new"}">${esc(o.status)}</span></td>
+          <td style="text-align:right"><button class="btn small ghost" data-receipt="${o.id}">Reçu</button></td></tr>`).join("") || '<tr><td colspan="6" class="muted">Aucune commande.</td></tr>'}
+        </table></div></div>
+      <div class="grid2" style="margin-top:16px">
+        <form class="panel" id="info-form" style="display:grid;gap:12px">
+          <h3 style="margin:0">👤 Mes informations</h3>
+          <label class="field">Nom<input name="name" value="${esc(c.name)}" required maxlength="80" autocomplete="name"></label>
+          <label class="field">E-mail<input value="${esc(c.email)}" disabled></label>
+          <label class="field">Téléphone<input name="phone" value="${esc(c.phone || "")}" maxlength="20" autocomplete="tel"></label>
+          <label class="check"><input type="checkbox" name="newsletter" ${c.newsletter ? "checked" : ""}> Recevoir les nouveautés par e-mail</label>
+          <button class="btn" type="submit">Enregistrer</button>
+        </form>
+        <form class="panel" id="pass-form" style="display:grid;gap:12px">
+          <h3 style="margin:0">🔒 Mot de passe</h3>
+          <label class="field">Mot de passe actuel<input name="current" type="password" required autocomplete="current-password"></label>
+          <label class="field">Nouveau (8 car. min., lettres + chiffres)<input name="next" type="password" required autocomplete="new-password"></label>
+          <label class="field">Confirmer<input name="confirm" type="password" required autocomplete="new-password"></label>
+          <p class="err" id="pass-err" role="alert"></p>
+          <button class="btn" type="submit">Changer le mot de passe</button>
+        </form>
+      </div>
+      <div class="grid2" style="margin-top:16px">
+        <div class="panel" style="display:grid;gap:10px;align-content:start"><h3 style="margin:0">🛟 Besoin d'aide ?</h3>
+          <p class="muted" style="margin:0">Notre équipe répond ${esc(data.content.contactHours)}.</p>
+          ${wa ? `<a class="btn" style="background:#25d366" href="${wa}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ""}
+          <a class="btn ghost" href="/#contact">✉️ Formulaire de contact</a></div>
+        <div class="panel" style="display:grid;gap:10px;align-content:start"><h3 style="margin:0">🛡️ Mes données (RGPD)</h3>
+          <p class="muted" style="margin:0">Téléchargez une copie de vos données ou supprimez votre compte.</p>
+          <button class="btn ghost" id="export-me">⬇ Télécharger mes données</button>
+          <button class="btn danger" id="delete-me">Supprimer mon compte</button></div>
+      </div>`;
+  }
+
+  // ---------- Actions ----------
+  const dash = document.getElementById("dash");
+  dash.addEventListener("submit", async e => {
+    e.preventDefault(); const f = new FormData(e.target), c = me(); if (!c) return show();
+    if (e.target.id === "info-form") {
+      Object.assign(c, { name: f.get("name").trim() || c.name, phone: f.get("phone").trim(), newsletter: f.get("newsletter") === "on" });
+      hayaSave(data); toast("Informations enregistrées ✓"); show();
+    }
+    if (e.target.id === "pass-form") {
+      const errEl = document.getElementById("pass-err"), fail = m => { errEl.textContent = m; errEl.style.display = "block"; };
+      if (!hayaSafeEqual(await hayaHash(f.get("current"), c.salt, c.iter), c.hash)) return fail("Mot de passe actuel incorrect.");
+      if (!hayaPasswordOk(f.get("next"), 8)) return fail("8 caractères minimum, avec des lettres et des chiffres.");
+      if (f.get("next") !== f.get("confirm")) return fail("Les deux mots de passe ne correspondent pas.");
+      c.salt = hayaSalt(); c.iter = 150000; c.hash = await hayaHash(f.get("next"), c.salt, c.iter);
+      hayaSave(data); toast("Mot de passe modifié ✓"); show();
+    }
+  });
+  dash.addEventListener("click", e => {
+    const t = e.target.closest("button"); if (!t) return; const c = me(); if (!c) return show();
+    if (t.dataset.receipt) hayaPrintReceipt(data.orders.find(o => o.id == t.dataset.receipt));
+    if (t.id === "export-me") {
+      const mine = { compte: { nom: c.name, email: c.email, telephone: c.phone, pays: c.country, newsletter: c.newsletter, cree_le: c.created },
+        commandes: data.orders.filter(o => o.customerId === c.id).map(({ customerId, ...o }) => o) };
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(mine, null, 2)], { type: "application/json" }));
+      a.download = "mes-donnees-haya-iptv.json"; a.click(); toast("Téléchargement lancé");
+    }
+    if (t.id === "delete-me" && confirm("Supprimer définitivement votre compte ? Vos commandes seront anonymisées (obligation comptable).")) {
+      data.orders.forEach(o => { if (o.customerId === c.id) Object.assign(o, { name: "Client supprimé", email: "—", phone: "", customerId: null }); });
+      data.customers = data.customers.filter(x => x.id !== c.id);
+      hayaSave(data); setSession(null); show(); toast("Compte supprimé");
+    }
+  });
+  ["click", "keydown"].forEach(ev => document.addEventListener(ev, () => { const c = me(); if (c) setSession(c.id); }));
+  show();
+</script>
+</body>
+</html>

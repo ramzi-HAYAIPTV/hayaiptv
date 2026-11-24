@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administration — Haya IPTV</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="../style.css?v=9">
+  <link rel="icon" href="../logo.svg" type="image/svg+xml">
+</head>
+<body>
+
+<!-- ===== Connexion ===== -->
+<div class="login" id="login">
+  <form id="login-form" autocomplete="on">
+    <a class="brand" href="../"><img class="mark" src="../logo.svg" alt=""><span class="word">haya<b>iptv</b></span></a>
+    <h1>Espace administration</h1>
+    <p class="muted" style="margin:0">Connectez-vous pour gérer la plateforme.</p>
+    <label class="field">Identifiant<input name="user" autocomplete="username" required></label>
+    <label class="field">Mot de passe<input name="pass" type="password" autocomplete="current-password" required></label>
+    <p class="err" id="login-err" role="alert">Identifiant ou mot de passe incorrect.</p>
+    <button class="btn block" type="submit" id="login-btn">Se connecter</button>
+    <p class="hint">🔒 Connexion protégée : mot de passe chiffré, blocage après 5 essais, déconnexion automatique après 30 min d'inactivité.</p>
+  </form>
+</div>
+
+<!-- ===== Application ===== -->
+<div class="admin admin-wrap" id="app" style="display:none">
+  <aside class="side">
+    <a class="brand" href="../" title="Voir le site"><img class="mark" src="../logo.svg" alt=""><span class="word">haya<b>iptv</b></span></a>
+    <div class="label">Pilotage</div>
+    <button data-tab="dash" class="active">📊 Tableau de bord</button>
+    <div class="label">Site web</div>
+    <button data-tab="content">✏️ Textes du site</button>
+    <button data-tab="visible">👁️ Sections affichées</button>
+    <button data-tab="sections">🧩 Sections & FAQ</button>
+    <button data-tab="appearance">🎨 Apparence</button>
+    <div class="label">Catalogue</div>
+    <button data-tab="channels">📺 Chaînes</button>
+    <button data-tab="plans">💳 Formules</button>
+    <div class="label">Ventes & clients</div>
+    <button data-tab="orders">🧾 Commandes</button>
+    <button data-tab="customers">👥 Clients</button>
+    <button data-tab="promos">🎟️ Codes promo</button>
+    <button data-tab="assistant">🤖 Assistant IA</button>
+    <button data-tab="messages">✉️ Messages <span id="unread"></span></button>
+    <div class="label">Système</div>
+    <button data-tab="status">📶 État du service</button>
+    <button data-tab="settings">⚙️ Paramètres</button>
+    <div class="spacer"></div>
+    <button onclick="location.href='../'">↗ Voir le site</button>
+    <button id="logout">⎋ Déconnexion</button>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+<div class="toast" id="toast">Enregistré ✓</div>
+
+<script src="../data.js?v=9"></script>
+<script>
+  // Sécurité : le mot de passe est vérifié par son empreinte PBKDF2 (data.security), jamais stocké en clair.
+  // En production, cette vérification se ferait côté serveur (API + base de données).
+  const SESSION_MS = 30 * 60 * 1000; // déconnexion après 30 min d'inactivité
+  let data = hayaLoad(), tab = "dash", chQuery = "", msgFilter = "all", orderFilter = "toutes";
+  const STATUSES = ["payée", "en attente", "remboursée", "annulée"];
+  const paidTotal = () => data.orders.filter(o => o.status === "payée").reduce((s, o) => s + Number(o.amount), 0);
+
+  const logged = () => { try { const until = +sessionStorage.getItem("haya-admin-until"); return until > Date.now(); } catch (e) { return false; } };
+  const setLogged = v => { try { v ? sessionStorage.setItem("haya-admin-until", Date.now() + SESSION_MS) : sessionStorage.removeItem("haya-admin-until"); } catch (e) {} };
+  // Chaque action prolonge la session ; sans activité pendant 30 min → retour à l'écran de connexion
+  ["click", "keydown"].forEach(ev => document.addEventListener(ev, () => { if (logged()) setLogged(true); }));
+  setInterval(() => { if (document.getElementById("app").style.display !== "none" && !logged()) { show(); toast("Session expirée, reconnectez-vous"); } }, 30000);
+  function toast(m) { const t = document.getElementById("toast"); t.textContent = m || "Enregistré ✓"; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 1700); }
+  function save(m) { hayaSave(data); render(); toast(m); }
+  function show() {
+    document.getElementById("login").style.display = logged() ? "none" : "grid";
+    document.getElementById("app").style.display = logged() ? "grid" : "none";
+    if (logged()) { render(); syncOrders(); }
+  }
+
+  /* ---- Commandes en ligne : base de données du serveur (/api/orders) ----
+     Les commandes passées depuis N'IMPORTE QUEL appareil (téléphone, PC…) arrivent ici. */
+  const apiPass = () => { try { return sessionStorage.getItem("haya-admin-pass") || ""; } catch (e) { return ""; } };
+  let lastSync = "";
+  async function api(method, body) {
+    const r = await fetch("../api/orders", { method, cache: "no-store",
+      headers: { "Content-Type": "application/json", "x-admin-pass": apiPass() }, body: body ? JSON.stringify(body) : undefined });
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  }
+  let syncError = "";
+  async function syncOrders(quiet = true) {
+    if (!logged()) return;
+    if (!apiPass()) { syncError = "Reconnectez-vous (bouton Déconnexion puis connexion) pour afficher les commandes passées depuis les autres appareils."; if (tab === "orders") render(); return; }
+    try {
+      const { orders } = await api("GET");
+      const fresh = hayaLoad(), server = orders.map(o => ({ ...o, id: o.uid }));
+      const uids = new Set(server.map(o => o.uid));
+      fresh.orders = [...server, ...fresh.orders.filter(o => !o.uid || !uids.has(o.uid))];
+      const sig = JSON.stringify(fresh.orders);
+      hayaSave(fresh); data = fresh; lastSync = new Date().toLocaleTimeString("fr-FR"); syncError = "";
+      if (["orders", "dash"].includes(tab) && !document.querySelector("#main :focus")) render();
+      if (!quiet) toast("Commandes à jour ✓");
+    } catch (e) {
+      syncError = e.message === "401" ? "Le serveur refuse le mot de passe : déconnectez-vous puis reconnectez-vous avec le mot de passe d'origine." : "Serveur injoignable : seules les commandes de ce navigateur sont affichées.";
+      if (tab === "orders") render();
+      if (!quiet) toast("Erreur de synchronisation");
+    }
+  }
+  setInterval(() => syncOrders(), 15000);   // nouvelles commandes toutes les 15 secondes
+
+  document.getElementById("login-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = new FormData(e.target), err = document.getElementById("login-err"), btn = document.getElementById("login-btn");
+    const lock = hayaLockState("admin");
+    if (lock.until > Date.now()) {
+      err.textContent = `Trop d'essais. Réessayez dans ${Math.ceil((lock.until - Date.now()) / 60000)} min.`; err.style.display = "block"; return;
+    }
+    btn.disabled = true; btn.textContent = "Vérification…";
+    const sec = hayaLoad().security;
+    const hash = await hayaHash(f.get("pass"), sec.salt, sec.iter);
+    btn.disabled = false; btn.textContent = "Se connecter";
+    if (f.get("user") === sec.adminUser && hayaSafeEqual(hash, sec.hash)) {
+      try { sessionStorage.setItem("haya-admin-pass", f.get("pass")); } catch (x) {}   // pour l'API des commandes (effacé à la déconnexion / fermeture de l'onglet)
+      hayaLockReset("admin"); err.style.display = "none"; e.target.reset(); data = hayaLoad(); setLogged(true); show();
+    } else {
+      const s = hayaLockFail("admin");
+      err.textContent = s.until > Date.now() ? "Trop d'essais : connexion bloquée 5 minutes." : `Identifiant ou mot de passe incorrect (${5 - s.fails} essai(s) restant(s)).`;
+      err.style.display = "block";
+    }
+  });
+  document.getElementById("logout").addEventListener("click", () => { setLogged(false); try { sessionStorage.removeItem("haya-admin-pass"); } catch (x) {} show(); });
+  document.querySelectorAll(".side [data-tab]").forEach(b => b.addEventListener("click", () => {
+    tab = b.dataset.tab; document.querySelectorAll(".side [data-tab]").forEach(x => x.classList.toggle("active", x === b));
+    data = hayaLoad(); render();   // relit les données : les nouvelles commandes du site apparaissent
+    if (["orders", "dash"].includes(tab)) syncOrders();
+  }));
+  // Commande passée sur le site dans un autre onglet → l'admin se met à jour tout seul
+  addEventListener("storage", e => { if (e.key === HAYA_KEY && logged()) { data = hayaLoad(); render(); toast("Nouvelles données reçues ✓"); } });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && logged() && !document.querySelector("#main :focus")) { data = hayaLoad(); render(); }
+  });
+
+  // --- Petits graphiques SVG ---
+  function barChart(values, labels) {
+    const max = Math.max(1, ...values), w = 560, h = 180, bw = w / values.length;
+    return `<svg viewBox="0 0 ${w} ${h + 24}" style="width:100%;height:auto">
+      <defs><linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#00d4ff"/><stop offset="1" stop-color="#7c5cff"/></linearGradient></defs>
+      ${[0, .5, 1].map(g => `<line x1="0" x2="${w}" y1="${h - g * h + .5}" y2="${h - g * h + .5}" stroke="rgba(255,255,255,.08)"/>`).join("")}
+      ${values.map((v, i) => { const bh = Math.max(3, v / max * (h - 14)); return `<rect x="${i * bw + bw * .22}" y="${h - bh}" width="${bw * .56}" height="${bh}" rx="6" fill="url(#bg1)"><title>${labels[i]} : ${v}</title></rect>
+        <text x="${i * bw + bw / 2}" y="${h + 18}" fill="#8f9bb8" font-size="12" text-anchor="middle" font-family="inherit">${labels[i]}</text>`; }).join("")}
+    </svg>`;
+  }
+  function donut(parts) {
+    const total = parts.reduce((s, p) => s + p.v, 0) || 1, colors = ["#7c5cff", "#00d4ff", "#ff4d8d", "#2ee59d", "#ffb547", "#9b8cff", "#4dd9ff", "#ff8fb4", "#a3e635"];
+    let acc = 0; const r = 52, c = 2 * Math.PI * r;
+    const arcs = parts.map((p, i) => { const len = p.v / total * c, s = `<circle r="${r}" cx="70" cy="70" fill="none" stroke="${colors[i % colors.length]}" stroke-width="20" stroke-dasharray="${len} ${c - len}" stroke-dashoffset="${-acc}" transform="rotate(-90 70 70)"/>`; acc += len; return s; }).join("");
+    return `<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+      <svg viewBox="0 0 140 140" width="140" height="140">${arcs}<text x="70" y="66" text-anchor="middle" fill="#f4f6fb" font-size="24" font-weight="800">${total}</text><text x="70" y="86" text-anchor="middle" fill="#8f9bb8" font-size="11">chaînes</text></svg>
+      <div style="display:grid;gap:6px;font-size:.88rem">${parts.map((p, i) => `<span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${colors[i % colors.length]};margin-right:8px"></i>${esc(p.k)} <b style="color:#8f9bb8">${p.v}</b></span>`).join("")}</div></div>`;
+  }
+
+  /* ---- Textes du site : groupes de champs + libellés en français ---- */
+  const GROUPS = [
+    ["🏠 Haut de page", ["heroBadge", "heroBadgeText", "heroTitle", "heroHighlight", "heroLead", "heroCta1", "heroCta2", "stat1Label", "stat2Value", "stat2Label", "stat3Value", "stat3Label"]],
+    ["📡 C'est quoi l'IPTV ?", ["iptvTitle", "iptvHighlight", "iptvLead"]],
+    ["⚡ Fonctionnalités", ["featuresTitle", "featuresHighlight", "featuresLead", "featureBigNumber"]],
+    ["📺 Chaînes", ["channelsTitle", "channelsHighlight", "channelsLead"]],
+    ["💳 Tarifs", ["pricingTitle", "pricingHighlight", "pricingLead", "billingPeriod", "yearlyDiscount"]],
+    ["🚀 Étapes & appareils", ["stepsTitle", "stepsHighlight", "devicesTitle", "devicesHighlight", "devicesLead"]],
+    ["❓ FAQ", ["faqTitle", "faqHighlight"]],
+    ["📣 Appel à l'action & contact", ["ctaTitle", "ctaText", "ctaButton", "contactTitle", "contactLead", "contactHours", "contactDelay"]],
+    ["⬇️ Pied de page", ["footerNote"]],
+    ["🤖 Assistant virtuel", ["botName", "botWelcome"]]
+  ];
+  const LABELS = {
+    heroBadge: "Badge", heroBadgeText: "Texte à côté du badge", heroTitle: "Grand titre (ligne 1)", heroHighlight: "Grand titre (ligne 2, en couleur)",
+    heroLead: "Phrase d'introduction", heroCta1: "Bouton principal", heroCta2: "Bouton secondaire",
+    stat1Label: "Légende chiffre 1 (nombre de thèmes, calculé automatiquement)",
+    iptvTitle: "Titre", iptvHighlight: "Titre (partie en couleur)", iptvLead: "Explication",
+    stat2Value: "Chiffre clé 2", stat2Label: "Légende chiffre 2", stat3Value: "Chiffre clé 3", stat3Label: "Légende chiffre 3",
+    featuresTitle: "Titre", featuresHighlight: "Titre (partie en couleur)", featuresLead: "Sous-titre", featureBigNumber: "Grand chiffre (2e bloc)",
+    channelsTitle: "Titre", channelsHighlight: "Titre (partie en couleur)", channelsLead: "Sous-titre",
+    pricingTitle: "Titre", pricingHighlight: "Titre (partie en couleur)", pricingLead: "Sous-titre", billingPeriod: "Période des prix : « an » (prix annuels) ou « mois »", yearlyDiscount: "Remise annuelle (%) — seulement en mode « mois »",
+    stepsTitle: "Titre des étapes", stepsHighlight: "Titre des étapes (couleur)", devicesTitle: "Titre des appareils", devicesHighlight: "Titre des appareils (couleur)", devicesLead: "Sous-titre des appareils",
+    faqTitle: "Titre", faqHighlight: "Titre (partie en couleur)",
+    ctaTitle: "Titre de l'encadré", ctaText: "Texte de l'encadré", ctaButton: "Bouton de l'encadré", contactTitle: "Titre contact", contactLead: "Texte contact", contactHours: "Horaires", contactDelay: "Délai de réponse",
+    footerNote: "Mention en bas de page",
+    botName: "Nom de l'assistant", botWelcome: "Message d'accueil de l'assistant"
+  };
+  const LONG = ["botWelcome", "heroLead", "iptvLead", "featuresLead", "channelsLead", "pricingLead", "devicesLead", "ctaText", "contactLead"];
+
+  /* ---- Éditeur générique de listes (fonctionnalités, étapes, appareils, FAQ) ---- */
+  const LISTS = {
+    features: { title: "⚡ Fonctionnalités", fields: [["icon", "Icône", 70], ["title", "Titre"], ["text", "Description", 0, true]], max: 5 },
+    steps:    { title: "🚀 Étapes", fields: [["title", "Titre"], ["text", "Description", 0, true]], max: 4 },
+    devices:  { title: "📱 Appareils compatibles", fields: [["icon", "Icône", 70], ["title", "Nom"], ["text", "Détail"]] },
+    faq:      { title: "❓ Questions fréquentes", fields: [["q", "Question"], ["a", "Réponse", 0, true]] },
+    reviews:  { title: "⭐ Avis clients — n'ajoutez que de VRAIS avis (section masquée tant que la liste est vide)", fields: [["name", "Nom"], ["rating", "Note /5", 80], ["text", "Avis", 0, true]] },
+    botQA:    { title: "🤖 Réponses apprises par l'assistant", fields: [["q", "Question du client"], ["a", "Réponse de l'assistant", 0, true]] }
+  };
+  function listEditor(key) {
+    const L = LISTS[key];
+    return `<form class="panel" data-list="${key}" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px"><h3 style="margin:0">${L.title}</h3>
+        <span class="muted" style="font-size:.85rem">${data[key].length} élément(s)${L.max ? ` · max ${L.max}` : ""}</span></div>
+      ${data[key].map((item, i) => `<div style="display:grid;grid-template-columns:${L.fields.map(f => f[2] ? f[2] + "px" : "1fr").join(" ")} auto;gap:8px;margin-bottom:8px;align-items:start">
+        ${L.fields.map(([f, lab, , long]) => long
+          ? `<textarea name="${f}-${i}" rows="2" placeholder="${lab}">${esc(item[f])}</textarea>`
+          : `<input name="${f}-${i}" placeholder="${lab}" value="${esc(item[f])}">`).join("")}
+        <button type="button" class="btn small danger" data-del-item="${key}:${i}" title="Supprimer">✕</button></div>`).join("")}
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button type="button" class="btn small ghost" data-add-item="${key}" ${L.max && data[key].length >= L.max ? "disabled" : ""}>+ Ajouter</button>
+        <button type="submit" class="btn small">Enregistrer</button></div>
+    </form>`;
+  }
+  function readList(form, key) {
+    const f = new FormData(form);
+    return data[key].map((_, i) => Object.fromEntries(LISTS[key].fields.map(([k]) => [k, f.get(`${k}-${i}`) || ""])));
+  }
+
+  const STATES = { ok: "✅ Opérationnel", slow: "🟡 Ralentissements", down: "🔴 Panne", maint: "🔧 Maintenance" };
+  const views = {
+    status() {
+      return `<div class="main-head"><div><h2>État du service</h2><p>Ce que les clients voient sur la page <a href="../status.html" target="_blank" style="color:var(--brand-2)">État du service ↗</a>.</p></div></div>
+        <form class="panel" id="status-form" style="display:grid;gap:12px;max-width:640px">
+          ${data.status.components.map((c, i) => `<label class="field" style="grid-template-columns:1fr 220px;align-items:center">${esc(c.name)}
+            <select name="s${i}">${Object.entries(STATES).map(([k, v]) => `<option value="${k}" ${c.state === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>`).join("")}
+          <label class="field">Message d'information (vide = aucun incident)<textarea name="message" rows="2" placeholder="Ex. : Maintenance prévue ce soir de 2 h à 3 h.">${esc(data.status.message || "")}</textarea></label>
+          <button class="btn" type="submit">Publier</button>
+        </form>`;
+    },
+    customers() {
+      const rows = data.customers.map(c => {
+        const mine = data.orders.filter(o => o.customerId === c.id);
+        return { c, n: mine.length, total: mine.filter(o => o.status === "payée").reduce((s, o) => s + Number(o.amount), 0) };
+      });
+      return `<div class="main-head"><div><h2>Clients</h2><p>Comptes créés lors des commandes. Les mots de passe ne sont jamais visibles (empreinte chiffrée).</p></div></div>
+        <div class="kpis">
+          <div class="kpi"><span>Clients</span><b>${data.customers.length}</b><small>comptes</small></div>
+          <div class="kpi"><span>Inscrits newsletter</span><b>${data.customers.filter(c => c.newsletter).length}</b><small>consentement RGPD</small></div>
+          <div class="kpi"><span>Valeur client moyenne</span><b>${euro(rows.length ? rows.reduce((s, r) => s + r.total, 0) / rows.length : 0)} €</b><small>par compte</small></div>
+        </div>
+        <div class="table-wrap"><table class="table"><tr><th>Client</th><th>Contact</th><th>Pays</th><th>Commandes</th><th>Total payé</th><th>Inscrit le</th></tr>
+          ${rows.map(({ c, n, total }) => `<tr><td><b>${esc(c.name)}</b>${c.newsletter ? ' <span class="badge read">news</span>' : ""}</td>
+            <td>${esc(c.email)}<br><span class="muted">${esc(c.phone || "")}</span></td><td>${esc(c.country || "")}</td><td>${n}</td><td><b>${euro(total)} €</b></td>
+            <td class="muted">${new Date(c.created).toLocaleDateString("fr-FR")}</td></tr>`).join("") || '<tr><td colspan="6" class="muted">Aucun compte client pour le moment. Passez une commande sur le site pour en créer un.</td></tr>'}
+        </table></div>`;
+    },
+    promos() {
+      return `<div class="main-head"><div><h2>Codes promo</h2><p>Les clients les saisissent à l'étape Paiement.</p></div></div>
+        <form class="panel" id="add-promo" style="display:grid;grid-template-columns:1.2fr 1fr .8fr .8fr 1fr auto;gap:8px;margin-bottom:16px;align-items:end">
+          <label class="field">Code<input name="code" required maxlength="20" placeholder="NOEL20" style="text-transform:uppercase"></label>
+          <label class="field">Type<select name="type"><option value="percent">% de remise</option><option value="fixed">€ de remise</option></select></label>
+          <label class="field">Valeur<input name="value" type="number" min="1" step="0.01" required></label>
+          <label class="field">Utilisations max<input name="maxUses" type="number" min="1" value="100"></label>
+          <label class="field">Expire le<input name="expires" type="date"></label>
+          <button class="btn small" type="submit">+ Créer</button>
+        </form>
+        <div class="table-wrap"><table class="table"><tr><th>Code</th><th>Remise</th><th>Utilisations</th><th>Expire le</th><th>Statut</th><th></th></tr>
+          ${data.promos.map((p, i) => `<tr><td><b>${esc(p.code)}</b></td><td>${p.type === "percent" ? esc(p.value) + " %" : euro(p.value) + " €"}</td>
+            <td>${p.uses || 0} / ${p.maxUses || "∞"}</td><td>${esc(p.expires || "—")}</td>
+            <td><button class="btn small ${p.active ? "" : "ghost"}" data-toggle-promo="${i}">${p.active ? "Actif" : "Inactif"}</button></td>
+            <td style="text-align:right"><button class="btn small danger" data-del-promo="${i}">Supprimer</button></td></tr>`).join("") || '<tr><td colspan="6" class="muted">Aucun code.</td></tr>'}
+        </table></div>`;
+    },
+    assistant() {
+      const msgs = data.chats.flatMap(c => c.messages);
+      const asked = msgs.filter(m => m.role === "client");
+      const missed = data.chats.flatMap(c => c.messages.filter(m => m.role === "client" && m.unanswered).map(m => ({ ...m, chat: c.id })));
+      const rate = asked.length ? Math.round((1 - missed.length / asked.length) * 100) : 100;
+      return `<div class="main-head"><div><h2>Assistant virtuel « ${esc(data.content.botName)} »</h2><p>Il répond 24 h/24 aux clients à partir des données du site (formules, chaînes, appareils, FAQ, commandes).</p></div>
+          <a class="btn small ghost" href="../#contact" target="_blank">Tester sur le site ↗</a></div>
+        <div class="kpis">
+          <div class="kpi"><span>Conversations</span><b>${data.chats.length}</b><small>enregistrées</small></div>
+          <div class="kpi"><span>Questions posées</span><b>${asked.length}</b><small>par les clients</small></div>
+          <div class="kpi"><span>Taux de réponse</span><b>${rate} %</b><small>sans intervention humaine</small></div>
+          <div class="kpi"><span>Sans réponse</span><b>${missed.length}</b><small>à enseigner à l'assistant</small></div>
+        </div>
+        <div class="panel" style="margin-bottom:16px"><h3>❓ Questions sans réponse — apprenez-les à l'assistant</h3>
+          ${missed.length ? missed.slice(0, 15).map((m, i) => `<form data-teach="${i}" style="display:grid;grid-template-columns:1fr 1.4fr auto;gap:8px;margin-bottom:8px;align-items:start">
+              <input name="q" value="${esc(m.text)}" aria-label="Question du client"><textarea name="a" rows="1" placeholder="Votre réponse…" aria-label="Réponse" required></textarea>
+              <button class="btn small" type="submit">Apprendre</button></form>`).join("") : '<p class="muted" style="margin:0">Aucune question sans réponse 🎉</p>'}
+        </div>
+        ${listEditor("botQA")}
+        <div class="panel"><h3>💬 Dernières conversations</h3>
+          ${data.chats.slice(0, 8).map(c => `<details style="border-top:1px solid var(--line);padding:10px 0"><summary style="cursor:pointer">${new Date(c.date).toLocaleString("fr-FR")} — ${c.messages.filter(m => m.role === "client").length} question(s) : <span class="muted">${esc((c.messages.find(m => m.role === "client") || {}).text || "")}</span></summary>
+            <div style="display:grid;gap:6px;margin-top:10px">${c.messages.map(m => `<div style="font-size:.88rem"><b style="color:${m.role === "client" ? "var(--brand-2)" : "var(--muted)"}">${m.role === "client" ? "Client" : esc(data.content.botName)} :</b> ${esc(m.text)}${m.unanswered ? ' <span class="badge new">sans réponse</span>' : ""}</div>`).join("")}</div></details>`).join("") || '<p class="muted" style="margin:0">Aucune conversation pour le moment.</p>'}
+        </div>`;
+    },
+    orders() {
+      const paid = data.orders.filter(o => o.status === "payée");
+      const days = [...Array(7)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - 6 + i); return d.toISOString().slice(0, 10); });
+      const perDay = days.map(d => Math.round(paid.filter(o => o.date === d).reduce((s, o) => s + Number(o.amount), 0)));
+      const labels = days.map(d => new Date(d + "T12:00").toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", ""));
+      const list = data.orders.filter(o => orderFilter === "toutes" || o.status === orderFilter);
+      return `<div class="main-head"><div><h2>Commandes</h2><p>Commandes passées sur le site depuis tous les appareils (mise à jour automatique toutes les 15 s${lastSync ? ` · dernière : ${lastSync}` : ""}). <span class="badge new">Mode test</span> aucun paiement réel.
+          <button type="button" class="btn small ghost" id="sync-orders" style="margin-left:6px">🔄 Actualiser</button></p>
+          ${syncError ? `<p style="margin:8px 0 0;padding:10px 14px;border-radius:12px;background:rgba(255,77,141,.12);border:1px solid rgba(255,77,141,.4);color:#ff8fb4;font-weight:600">⚠️ ${esc(syncError)}</p>` : ""}</div>
+          <div class="tabs">${["toutes", ...STATUSES].map(s => `<button class="tab ${orderFilter === s ? "active" : ""}" data-ofilter="${s}">${s[0].toUpperCase() + s.slice(1)}</button>`).join("")}</div></div>
+        <div class="kpis">
+          <div class="kpi"><span>Commandes</span><b>${data.orders.length}</b><small>${paid.length} payée${paid.length > 1 ? "s" : ""}</small></div>
+          <div class="kpi"><span>Chiffre d'affaires (test)</span><b>${euro(paidTotal())} €</b><small>commandes payées</small></div>
+          <div class="kpi"><span>Panier moyen</span><b>${euro(paid.length ? paidTotal() / paid.length : 0)} €</b><small>par commande payée</small></div>
+          <div class="kpi"><span>En attente</span><b>${data.orders.filter(o => o.status === "en attente").length}</b><small>à vérifier</small></div>
+        </div>
+        <div class="panel" style="margin-bottom:16px"><h3>Chiffre d'affaires — 7 derniers jours (€)</h3>${barChart(perDay, labels)}</div>
+        <div class="table-wrap"><table class="table">
+          <tr><th>Réf.</th><th>Date</th><th>Client</th><th>Formule</th><th>Paiement</th><th>Montant</th><th>Statut</th><th></th></tr>
+          ${list.map(o => `<tr><td><b>${esc(o.ref)}</b></td><td class="muted" style="white-space:nowrap">${esc(o.date)}</td>
+            <td><b>${esc(o.name)}</b><br><span class="muted">${esc(o.email)}</span>${o.phone ? `<br><a class="muted" href="tel:${esc(o.phone.replace(/\s/g, ""))}">📞 ${esc(o.phone)}</a>` : ""}${o.newsletter ? ' <span class="badge read" title="Accepte la newsletter">news</span>' : ""}</td>
+            <td>${esc(o.plan)}<br><span class="muted">${esc(o.billing)}</span></td><td>${esc(o.method)}</td>
+            <td style="white-space:nowrap"><b>${euro(o.amount)} €</b></td>
+            <td><select data-status="${o.id}" aria-label="Statut de la commande ${esc(o.ref)}" style="width:auto;padding:6px 10px">${STATUSES.map(s => `<option ${s === o.status ? "selected" : ""}>${s}</option>`).join("")}</select></td>
+            <td style="text-align:right;white-space:nowrap"><button class="btn small ghost" data-receipt="${o.id}" title="Reçu">🧾</button> <button class="btn small danger" data-del-order="${o.id}">Supprimer</button></td></tr>`).join("") || `<tr><td colspan="8" class="muted">Aucune commande.</td></tr>`}
+        </table></div>`;
+    },
+    content() {
+      return `<div class="main-head"><div><h2>Textes du site</h2><p>Modifiez n'importe quel texte de la page d'accueil, puis enregistrez. <a href="../" target="_blank" style="color:var(--brand-2)">Ouvrir le site ↗</a></p></div></div>
+        ${GROUPS.map(([title, keys]) => `<form class="panel" data-group style="margin-bottom:16px;display:grid;gap:12px">
+          <h3 style="margin:0">${title}</h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+            ${keys.map(k => `<label class="field" ${LONG.includes(k) ? 'style="grid-column:1/-1"' : ""}>${LABELS[k] || k}
+              ${LONG.includes(k) ? `<textarea name="${k}" rows="2">${esc(data.content[k])}</textarea>` : `<input name="${k}" value="${esc(data.content[k])}">`}</label>`).join("")}
+          </div>
+          <button class="btn small" type="submit" style="justify-self:start">Enregistrer cette section</button>
+        </form>`).join("")}`;
+    },
+    visible() {
+      const NAMES = { iptv: "📡 C'est quoi l'IPTV ? (schéma)", features: "⚡ Fonctionnalités", channels: "📺 Chaînes", guide: "🗓️ Guide TV", pricing: "💳 Tarifs",
+        steps: "🚀 Démarrage en 3 étapes", devices: "📱 Appareils compatibles", reviews: "⭐ Avis clients (seulement s'il y a des avis)", faq: "❓ FAQ", contact: "✉️ Contact" };
+      return `<div class="main-head"><div><h2>Sections affichées</h2><p>Cochez les parties visibles sur la page d'accueil. Moins de sections = un site plus clair. <a href="../" target="_blank" style="color:var(--brand-2)">Ouvrir le site ↗</a></p></div></div>
+        <form class="panel" id="visible-form" style="display:grid;gap:10px;max-width:560px">
+          ${Object.keys(NAMES).map(k => `<label style="display:flex;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;cursor:pointer">
+            <input type="checkbox" name="${k}" ${data.sections[k] !== false ? "checked" : ""} style="width:20px;height:20px"> ${NAMES[k]}</label>`).join("")}
+          <button class="btn" type="submit" style="justify-self:start">Enregistrer</button>
+        </form>`;
+    },
+    sections() {
+      return `<div class="main-head"><div><h2>Sections & FAQ</h2><p>Ajoutez, modifiez ou supprimez les blocs affichés sur le site.</p></div></div>
+        ${Object.keys(LISTS).filter(k => k !== "botQA").map(listEditor).join("")}`;
+    },
+    appearance() {
+      const t = data.theme;
+      const presets = [["Violet (origine)", "#7c5cff", "#00d4ff", "#ff4d8d"], ["Océan", "#2563eb", "#22d3ee", "#a78bfa"], ["Émeraude", "#059669", "#34d399", "#facc15"], ["Coucher de soleil", "#f97316", "#facc15", "#ef4444"], ["Rose", "#db2777", "#f472b6", "#8b5cf6"]];
+      return `<div class="main-head"><div><h2>Apparence</h2><p>Choisissez les couleurs de la plateforme. Elles s'appliquent au site et à l'admin.</p></div></div>
+        <div class="cols">
+          <form class="panel" id="theme" style="display:grid;gap:14px">
+            ${[["brand", "Couleur principale (boutons)"], ["brand2", "Couleur secondaire"], ["hot", "Couleur d'accent"]].map(([k, l]) => `
+              <label class="field" style="grid-template-columns:1fr auto;align-items:center">${l}
+                <input type="color" name="${k}" value="${esc(t[k])}" style="width:64px;height:40px;padding:4px;cursor:pointer"></label>`).join("")}
+            <button class="btn" type="submit">Appliquer</button>
+          </form>
+          <div class="panel"><h3>Palettes prêtes</h3>
+            <div style="display:grid;gap:10px">${presets.map(([n, a, b, c]) => `<button class="btn ghost" data-preset="${a},${b},${c}" style="justify-content:flex-start">
+              <span style="display:inline-flex;gap:4px">${[a, b, c].map(x => `<i style="width:16px;height:16px;border-radius:50%;background:${x};display:inline-block"></i>`).join("")}</span> ${n}</button>`).join("")}</div>
+            <div style="margin-top:18px;height:70px;border-radius:14px;background:linear-gradient(100deg,var(--brand-2),var(--brand),var(--hot))"></div>
+          </div>
+        </div>`;
+    },
+    dash() {
+      const unread = data.messages.filter(m => !m.read).length;
+      const cats = [...new Set(data.channels.map(c => c.cat))].map(k => ({ k, v: data.channels.filter(c => c.cat === k).length })).sort((a, b) => b.v - a.v);
+      const days = [...Array(7)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - 6 + i); return d.toISOString().slice(0, 10); });
+      const perDay = days.map(d => data.messages.filter(m => m.date === d).length);
+      const labels = days.map(d => new Date(d + "T12:00").toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", ""));
+      const avg = data.plans.length ? data.plans.reduce((s, p) => s + (parseFloat(p.price) || 0), 0) / data.plans.length : 0;
+      return `<div class="main-head"><div><h2>Bonjour 👋</h2><p>Voici l'activité de ${esc(data.settings.name)}.</p></div>
+          <button class="btn small ghost" data-go="messages">Voir les messages</button></div>
+        <div class="kpis">
+          <div class="kpi"><span>Chaînes</span><b>${data.channels.length}</b><small>${cats.length} catégories</small></div>
+          <div class="kpi"><span>Formules</span><b>${data.plans.length}</b><small>prix moyen ${euro(avg)} €</small></div>
+          <div class="kpi"><span>Messages</span><b>${data.messages.length}</b><small>${unread} non lu${unread > 1 ? "s" : ""}</small></div>
+          <div class="kpi"><span>Chiffre d'affaires (test)</span><b>${euro(paidTotal())} €</b><small>${data.orders.length} commande${data.orders.length > 1 ? "s" : ""}</small></div>
+        </div>
+        <div class="cols">
+          <div class="panel"><h3>Messages reçus — 7 derniers jours</h3>${barChart(perDay, labels)}</div>
+          <div class="panel"><h3>Répartition du catalogue</h3>${donut(cats)}</div>
+        </div>
+        <div class="panel" style="margin-top:16px"><h3>Derniers messages</h3>
+          ${data.messages.slice(0, 3).map(m => `<div style="display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)">
+            <div><b>${esc(m.name)}</b> <span class="muted">— ${esc(m.message)}</span></div><span class="badge ${m.read ? "read" : "new"}">${m.read ? "Lu" : "Nouveau"}</span></div>`).join("") || '<p class="muted">Aucun message.</p>'}
+        </div>`;
+    },
+    channels() {
+      const list = data.channels.filter(c => (c.name + c.cat + (c.program || "")).toLowerCase().includes(chQuery));
+      return `<div class="main-head"><div><h2>Chaînes</h2><p>${data.channels.length} chaînes au catalogue. Les changements apparaissent immédiatement sur le site.</p></div>
+          <input id="ch-q" placeholder="Rechercher…" value="${esc(chQuery)}" style="max-width:240px"></div>
+        <form class="formrow panel" id="add-channel">
+          <input name="icon" placeholder="Icône 📺" maxlength="4" required>
+          <input name="name" placeholder="Nom de la chaîne" required>
+          <input name="cat" placeholder="Catégorie" list="cats" required>
+          <input name="program" placeholder="Programme en cours">
+          <button class="btn small" type="submit">+ Ajouter</button>
+          <datalist id="cats">${[...new Set(data.channels.map(c => c.cat))].map(c => `<option value="${esc(c)}">`).join("")}</datalist>
+        </form>
+        <div class="table-wrap"><table class="table">
+          <tr><th></th><th>Nom</th><th>Catégorie</th><th>Programme</th><th></th></tr>
+          ${list.map(c => `<tr><td style="font-size:1.4rem">${esc(c.icon)}</td><td><b>${esc(c.name)}</b></td><td>${esc(c.cat)}</td><td class="muted">${esc(c.program || "—")}</td>
+            <td style="text-align:right"><button class="btn small danger" data-del-channel="${c.id}">Supprimer</button></td></tr>`).join("") || `<tr><td colspan="5" class="muted">Aucun résultat.</td></tr>`}
+        </table></div>`;
+    },
+    plans() {
+      return `<div class="main-head"><div><h2>Formules</h2><p>${(data.content.billingPeriod || "mois") === "an" ? "Prix <b>par an</b> (1 écran). Le prix mensuel équivalent est calculé automatiquement sur le site." : "Prix mensuels. Le tarif annuel avec remise est calculé automatiquement."} Période modifiable dans Textes du site › Tarifs.</p></div></div>
+        <div class="plans">${data.plans.map(p => `<form class="plan ${p.popular ? "pop" : ""}" data-plan="${p.id}" style="gap:12px">
+          <label class="field">Nom<input name="name" value="${esc(p.name)}" required></label>
+          <label class="field">Prix (€ ${(data.content.billingPeriod || "mois") === "an" ? "par an" : "par mois"})<input name="price" type="number" step="0.01" min="0" value="${esc(p.price)}" required></label>
+          <label class="field">Avantages (un par ligne)<textarea name="features" rows="5">${esc(p.features.join("\n"))}</textarea></label>
+          <label style="display:flex;gap:10px;align-items:center;font-weight:600"><input type="checkbox" name="popular" style="width:auto" ${p.popular ? "checked" : ""}> Mettre en avant</label>
+          <button class="btn small" type="submit">Enregistrer</button>
+        </form>`).join("")}</div>`;
+    },
+    messages() {
+      const list = data.messages.filter(m => msgFilter === "all" || (msgFilter === "new" ? !m.read : m.read));
+      return `<div class="main-head"><div><h2>Messages</h2><p>Demandes envoyées depuis le formulaire de contact du site.</p></div>
+          <div class="tabs">${[["all", "Tous"], ["new", "Non lus"], ["read", "Lus"]].map(([k, l]) => `<button class="tab ${msgFilter === k ? "active" : ""}" data-filter="${k}">${l}</button>`).join("")}</div></div>
+        <div class="table-wrap"><table class="table">
+          <tr><th>Date</th><th>Contact</th><th>Message</th><th>Statut</th><th></th></tr>
+          ${list.map(m => `<tr><td class="muted" style="white-space:nowrap">${esc(m.date)}</td><td><b>${esc(m.name)}</b><br><span class="muted">${esc(m.email)}</span>${m.phone ? `<br><a class="muted" href="tel:${esc(m.phone.replace(/\s/g, ""))}">📞 ${esc(m.phone)}</a>` : ""}</td><td>${esc(m.message)}</td>
+            <td><span class="badge ${m.read ? "read" : "new"}">${m.read ? "Lu" : "Nouveau"}</span></td>
+            <td style="white-space:nowrap;text-align:right">${m.read ? "" : `<button class="btn small ghost" data-read="${m.id}">Marquer lu</button> `}<button class="btn small danger" data-del-msg="${m.id}">Supprimer</button></td></tr>`).join("") || `<tr><td colspan="5" class="muted">Aucun message.</td></tr>`}
+        </table></div>`;
+    },
+    settings() {
+      return `<div class="main-head"><div><h2>Paramètres</h2><p>Informations affichées sur le site public.</p></div></div>
+        <div class="cols">
+          <form class="panel" id="settings" style="display:grid;gap:14px">
+            <label class="field">Nom de la plateforme<input name="name" value="${esc(data.settings.name)}" required></label>
+            <label class="field">Slogan<input name="slogan" value="${esc(data.settings.slogan)}"></label>
+            <label class="field">E-mail de contact<input name="email" type="email" value="${esc(data.settings.email)}"></label>
+            <label class="field">Numéro WhatsApp (format international, ex. +213555439766 — vide = bouton masqué)<input name="whatsapp" type="tel" value="${esc(data.settings.whatsapp || "")}"></label>
+            <label class="field">Message WhatsApp pré-rempli<input name="whatsappMessage" value="${esc(data.settings.whatsappMessage || "")}"></label>
+            <label class="field">Conçu et développé par (affiché en bas du site)<input name="author" value="${esc(data.settings.author)}"></label>
+            <button class="btn" type="submit">Enregistrer</button>
+          </form>
+          <div class="panel" style="display:grid;gap:12px;align-content:start">
+            <h3 style="margin:0">Données</h3>
+            <p class="muted" style="margin:0">Exportez une sauvegarde ou réinitialisez la démonstration.</p>
+            <button class="btn ghost" id="export">⬇ Exporter (JSON)</button>
+            <button class="btn danger" id="reset">Réinitialiser les données</button>
+          </div>
+        </div>
+        <form class="panel" id="security-form" style="display:grid;gap:12px;max-width:520px;margin-top:16px" autocomplete="off">
+          <h3 style="margin:0">🔒 Sécurité du compte administrateur</h3>
+          <p class="muted" style="margin:0;font-size:.85rem">⚠️ Les commandes en ligne (serveur) utilisent le mot de passe d'origine : si vous le changez ici, il faut aussi le changer dans le serveur (hayaiptv-api/functions/orders.mjs).</p>
+          <label class="field">Identifiant<input name="user" value="${esc(data.security.adminUser)}" required autocomplete="username"></label>
+          <label class="field">Mot de passe actuel<input name="current" type="password" required autocomplete="current-password"></label>
+          <label class="field">Nouveau mot de passe (10 caractères min., lettres + chiffres)<input name="next" type="password" required autocomplete="new-password"></label>
+          <label class="field">Confirmer le nouveau mot de passe<input name="confirm" type="password" required autocomplete="new-password"></label>
+          <p class="err" id="sec-err" role="alert"></p>
+          <button class="btn" type="submit">Changer le mot de passe</button>
+          <p class="hint" style="margin:0">Empreinte PBKDF2-SHA256 avec sel aléatoire, 150 000 itérations. Le mot de passe n'est jamais enregistré en clair.</p>
+        </form>`;
+    }
+  };
+
+  function render() {
+    hayaApplyTheme(data.theme);
+    const unread = data.messages.filter(m => !m.read).length;
+    document.getElementById("unread").outerHTML = `<span id="unread" class="badge new" style="${unread ? "" : "display:none"}">${unread}</span>`;
+    document.getElementById("main").innerHTML = views[tab]();
+    const q = document.getElementById("ch-q");
+    if (q) { q.addEventListener("input", e => { chQuery = e.target.value.toLowerCase(); const pos = e.target.selectionStart; render(); const n = document.getElementById("ch-q"); n.focus(); n.setSelectionRange(pos, pos); }); }
+  }
+
+  const main = document.getElementById("main");
+  main.addEventListener("submit", async e => {
+    e.preventDefault(); const f = new FormData(e.target);
+    if (e.target.id === "visible-form") {
+      Object.keys(data.sections).forEach(k => data.sections[k] = f.get(k) === "on");
+      return save("Sections enregistrées ✓");
+    }
+    if (e.target.id === "status-form") {
+      data.status.components.forEach((c, i) => c.state = f.get("s" + i));
+      data.status.message = f.get("message").trim(); data.status.updated = new Date().toISOString();
+      return save("État du service publié ✓");
+    }
+    if (e.target.id === "add-promo") {
+      const code = f.get("code").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+      if (!code) return;
+      if (data.promos.some(p => p.code === code)) return toast("Ce code existe déjà");
+      data.promos.unshift({ code, type: f.get("type"), value: Number(f.get("value")), maxUses: Number(f.get("maxUses")) || 0, uses: 0, expires: f.get("expires") || "", active: true });
+      return save("Code promo créé ✓");
+    }
+    if (e.target.id === "security-form") {
+      const errEl = document.getElementById("sec-err"), fail = m => { errEl.textContent = m; errEl.style.display = "block"; };
+      const cur = await hayaHash(f.get("current"), data.security.salt, data.security.iter);
+      if (!hayaSafeEqual(cur, data.security.hash)) return fail("Mot de passe actuel incorrect.");
+      if (!hayaPasswordOk(f.get("next"))) return fail("Le nouveau mot de passe doit faire au moins 10 caractères, avec des lettres et des chiffres.");
+      if (f.get("next") !== f.get("confirm")) return fail("Les deux nouveaux mots de passe ne correspondent pas.");
+      const salt = hayaSalt();
+      data.security = { adminUser: f.get("user").trim() || "admin", salt, hash: await hayaHash(f.get("next"), salt, 150000), iter: 150000 };
+      return save("Mot de passe modifié ✓");
+    }
+    if (e.target.id === "add-channel") {
+      data.channels.push({ id: hayaNextId(data.channels), icon: f.get("icon"), name: f.get("name"), cat: f.get("cat"), program: f.get("program") });
+      save("Chaîne ajoutée ✓");
+    } else if (e.target.dataset.plan) {
+      Object.assign(data.plans.find(x => x.id == e.target.dataset.plan), { name: f.get("name"), price: f.get("price"), popular: f.get("popular") === "on",
+        features: f.get("features").split("\n").map(s => s.trim()).filter(Boolean) });
+      save("Formule enregistrée ✓");
+    } else if (e.target.id === "settings") {
+      Object.assign(data.settings, { name: f.get("name"), slogan: f.get("slogan"), email: f.get("email"), author: f.get("author"), whatsapp: f.get("whatsapp").trim(), whatsappMessage: f.get("whatsappMessage") }); save();
+    } else if (e.target.hasAttribute("data-group")) {
+      for (const [k, v] of f.entries()) data.content[k] = v;
+      save("Textes enregistrés ✓");
+    } else if (e.target.dataset.list) {
+      data[e.target.dataset.list] = readList(e.target, e.target.dataset.list);
+      save("Section enregistrée ✓");
+    } else if (e.target.dataset.teach !== undefined) {
+      // « Apprendre » : ajoute la réponse et retire la question de la liste « sans réponse »
+      const q = f.get("q").trim(), a = f.get("a").trim();
+      if (!q || !a) return;
+      data.botQA.push({ q, a });
+      data.chats.forEach(c => c.messages.forEach(m => { if (m.unanswered && m.text === q) m.unanswered = false; }));
+      save("L'assistant a appris cette réponse ✓");
+    } else if (e.target.id === "theme") {
+      data.theme = { brand: f.get("brand"), brand2: f.get("brand2"), hot: f.get("hot") };
+      save("Couleurs appliquées ✓");
+    }
+  });
+  main.addEventListener("click", e => {
+    const t = e.target.closest("button"); if (!t) return;
+    if (t.dataset.go) document.querySelector(`.side [data-tab="${t.dataset.go}"]`).click();
+    if (t.dataset.addItem) {
+      const key = t.dataset.addItem, form = t.closest("form");
+      data[key] = readList(form, key);               // garde ce qui a été tapé
+      data[key].push(Object.fromEntries(LISTS[key].fields.map(([k]) => [k, ""])));
+      render();
+    }
+    if (t.dataset.delItem) {
+      const [key, i] = t.dataset.delItem.split(":");
+      data[key] = readList(t.closest("form"), key);
+      data[key].splice(+i, 1); save("Élément supprimé");
+    }
+    if (t.dataset.preset) {
+      const [brand, brand2, hot] = t.dataset.preset.split(",");
+      data.theme = { brand, brand2, hot }; save("Palette appliquée ✓");
+    }
+    if (t.dataset.filter) { msgFilter = t.dataset.filter; render(); }
+    if (t.dataset.ofilter) { orderFilter = t.dataset.ofilter; render(); }
+    if (t.dataset.togglePromo) { const p = data.promos[+t.dataset.togglePromo]; p.active = !p.active; save(p.active ? "Code activé" : "Code désactivé"); }
+    if (t.dataset.delPromo && confirm("Supprimer ce code promo ?")) { data.promos.splice(+t.dataset.delPromo, 1); save("Code supprimé"); }
+    if (t.dataset.receipt) hayaPrintReceipt(data.orders.find(o => o.id == t.dataset.receipt));
+    if (t.dataset.delOrder && confirm("Supprimer cette commande ?")) {
+      const o = data.orders.find(x => x.id == t.dataset.delOrder);
+      data.orders = data.orders.filter(x => x.id != t.dataset.delOrder); save("Commande supprimée");
+      if (o && o.uid) api("POST", { action: "delete", uid: o.uid }).catch(() => toast("Suppression en ligne impossible"));
+    }
+    if (t.id === "sync-orders") syncOrders(false);
+    if (t.dataset.delChannel && confirm("Supprimer cette chaîne ?")) { data.channels = data.channels.filter(c => c.id != t.dataset.delChannel); save("Chaîne supprimée"); }
+    if (t.dataset.delMsg && confirm("Supprimer ce message ?")) { data.messages = data.messages.filter(m => m.id != t.dataset.delMsg); save("Message supprimé"); }
+    if (t.dataset.read) { data.messages.find(m => m.id == t.dataset.read).read = true; save("Marqué comme lu"); }
+    if (t.id === "export") {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+      a.download = "haya-iptv-sauvegarde.json"; a.click(); toast("Export téléchargé");
+    }
+    if (t.id === "reset" && confirm("Réinitialiser toutes les données ?")) { hayaReset(); data = hayaLoad(); save("Données réinitialisées"); }
+  });
+
+  // Changement de statut d'une commande
+  main.addEventListener("change", e => {
+    const id = e.target.dataset.status;
+    if (id) {
+      const o = data.orders.find(x => x.id == id); o.status = e.target.value; save("Statut mis à jour ✓");
+      if (o.uid) api("POST", { action: "status", uid: o.uid, status: o.status }).catch(() => toast("Mise à jour en ligne impossible"));
+    }
+  });
+
+  show();
+</script>
+</body>
+</html>
